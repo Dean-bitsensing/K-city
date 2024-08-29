@@ -5,10 +5,10 @@
 
 ### app/
 - 애플리케이션의 주요 코드 위치
-- controllers/:
+- controllers/: 키 입력이나 마우스 조작에 대한 정보를 처리합니다.
     - main_controller.py : 애플리케이션의 메인 컨트롤러. 모델과 뷰 사이의 중개 역할
 
-- models/:
+- models/: 퓨전 
     - data_model.py : 어플리케이션의 데이터 모델 정의
 
 - viewers/:
