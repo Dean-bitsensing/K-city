@@ -4,31 +4,30 @@ import config
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((640, 480))
-    pygame.display.set_caption('MVC Pattern Example')
+    screen = pygame.display.set_mode((config.WINDOW_WIDTH, config.WINDOW_LENGTH), pygame.RESIZABLE)
+    pygame.display.set_caption('K-City develop tool')
 
     # Model
-    rect_model = RectangleModel(50, 50, 60, 60)
+    rect_model = MainModel(50, 50, 60, 60)
 
     # View
-    rect_view = MainViewer(rect_model, screen)
+    viewer = MainViewer(rect_model, screen)
 
     # Controller
-    rect_controller = KeyboardController(rect_model)
+    event_controller = MainController(rect_model, viewer)
 
     clock = pygame.time.Clock()
 
-    running = True
-    while running:
+    
+    while viewer.running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                viewer.running = False
             else:
-                rect_controller.handle_event(event)
-
-        screen.fill((0, 0, 0))  # Clear screen with black color
-        rect_view.draw()
-        pygame.display.flip()
+                event_controller.handle_event(event)
+        screen.fill((0, 0, 0))
+        viewer.draw()
+        pygame.display.flip() # 화면 업데이트
 
         clock.tick(config.FPS)  # Limit frame rate to 60 FPS
 
