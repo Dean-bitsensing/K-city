@@ -1,5 +1,6 @@
 import h5py
 import config 
+import pygame
 
 class MainModel:
     def __init__(self, x, y, width, height):
@@ -8,7 +9,7 @@ class MainModel:
         self.width = width
         self.height = height
 
-
+        self.cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg', '../resources/6.jpg', '../resources/7.jpg', '../resources/8.jpg',]
         self.init_model_class()
         
 
@@ -22,9 +23,10 @@ class MainModel:
     def init_model_class(self):
         self.window_model = WindowModel()
         self.grid_model = GridModel()
-        self.cam_bound_model = CamBoundModel()
+        self.cam_bound_model = CamBoundModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH, self.cam_data_list)
         self.cam_change_left_button_model = CamChangeLeftButtonModel()
         self.cam_change_right_button_model = CamChangeRightButtonModel()
+        
 
     def window_resize(self, width, length):
         self.window_model = WindowModel(width, length)
@@ -87,8 +89,11 @@ class GridModel(WindowModel):
 
 
 class CamBoundModel(WindowModel):
-    def __init__(self, width=1200, length=800):
+    def __init__(self, width=1200, length=800, cam_data_list=None):
         super().__init__(width, length)  # 부모 클래스인 WindowModel 초기화
+        self.cam_data_list = cam_data_list if cam_data_list else []
+        self.current_page = 0
+        self.cams_per_page = 4  # 한 페이지에 표시할 최대 캠 데이터 수
         self.update()
 
     def update(self):
@@ -104,7 +109,38 @@ class CamBoundModel(WindowModel):
         self.center_ver_line_start_pos = (self.GRID_WINDOW_WIDTH+int(self.width/2), 0)
         self.center_ver_line_end_pos = (self.GRID_WINDOW_WIDTH+int(self.width/2), self.length)
         
+    def get_current_page_cams(self):
+        start_idx = self.current_page * self.cams_per_page
+        end_idx = start_idx + self.cams_per_page
+        return self.cam_data_list[start_idx:end_idx]
+
+    def next_page(self):
+        if (self.current_page + 1) * self.cams_per_page < len(self.cam_data_list):
+            self.current_page += 1
+
+    def previous_page(self):
+        if self.current_page > 0:
+            self.current_page -= 1
+
+    def render_cams(self, screen):
+        cams = self.get_current_page_cams()
+        positions = [
+            (self.posx, self.posy),
+            (self.center_ver_line_start_pos[0], self.posy),
+            (self.posx, self.center_hor_line_start_pos[1]),
+            (self.center_ver_line_start_pos[0], self.center_hor_line_start_pos[1])
+        ]
         
+        for cam, pos in zip(cams, positions):
+            image = pygame.image.load(cam)
+            image = pygame.transform.scale(image, (int(self.width/2), int(self.length/2)))
+            screen.blit(image, pos)
+
+class CamDataModel:
+    def __init__(self, image_path):
+        self.image = pygame.image.load(image_path)
+        self.image = pygame.transform.scale(self.image, (300, 200))  # 캠 이미지 크기 조절
+
 class CamChangeLeftButtonModel(CamBoundModel):
     def __init__(self, width=1200, length=800):
         super().__init__(width, length)  # 부모 클래스인 CamBoundModel 초기화
@@ -138,3 +174,48 @@ class CamChangeRightButtonModel(CamBoundModel):
     def  is_clicked(self, mouse_pos):
         return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
+    
+
+class CamImage(WindowModel):
+    def __init__(self, image, width=1200, length=800):
+        super().__init__(width, length)  # 부모 클래스인 WindowModel 초기화
+        self.image = pygame.image.load(image)
+        self.update()
+
+    def update(self):
+        self.image = pygame.transform.scale(self.image, (300, 200))
+        self.posx = self.CAM_BOUND_X
+        self.posy = self.CAM_BOUND_Y
+        self.width = int(self.WINDOW_WIDTH - self.CAM_BOUND_X)
+        self.length = self.CAM_BOUND_LENGTH
+        self.color = config.WHITE
+
+        self.center_hor_line_start_pos = (self.GRID_WINDOW_WIDTH, int(self.length/2))
+        self.center_hor_line_end_pos = (self.WINDOW_WIDTH, int(self.length/2))
+
+        self.center_ver_line_start_pos = (self.GRID_WINDOW_WIDTH+int(self.width/2), 0)
+        self.center_ver_line_end_pos = (self.GRID_WINDOW_WIDTH+int(self.width/2), self.length)
+
+class CamDataModel:
+    def __init__(self, image_path):
+        self.image = pygame.image.load(image_path)
+        self.image = pygame.transform.scale(self.image, (300, 200))  # 캠 이미지 크기 조절
+
+
+
+        # fsub = io.BytesIO(image)
+        # img = pygame.image.load(fsub, 'jpg')
+        # img = pygame.surfarray.array3d(img)
+        # if img.shape[-1] == 3:  # 3채널 이미지일 때
+        #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # img = pygame.surfarray.make_surface(img)
+        # img_rect = pygame.Rect(ToolConfig.CAM_POS_X, 0, ToolConfig.CAM_WINDOW_WIDTH, ToolConfig.CAM_WINDOW_LENGTH)
+
+        # # 이미지의 스케일 조정
+        # scaled_img = pygame.transform.scale(img, (img_rect.width, img_rect.height))
+
+        # # 이미지 표시할 영역을 흰색으로 지우기
+        # pygame.draw.rect(self.screen, (255, 255, 255), img_rect)
+
+        # # 메인 화면(self.screen)에 이미지를 블릿
+        # self.screen.blit(scaled_img, img_rect.topleft)

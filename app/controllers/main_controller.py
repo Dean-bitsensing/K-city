@@ -24,8 +24,10 @@ class MainController:
             if event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
                 if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
+                    self.model.cam_bound_model.next_page()
                     print("Left button clicked!")
                 elif self.model.cam_change_right_button_model.is_clicked(mouse_pos):
+                    self.model.cam_bound_model.previous_page()
                     print("Right button clicked!")
 
     def update_config(self, width, length):

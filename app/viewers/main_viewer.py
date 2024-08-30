@@ -28,6 +28,7 @@ class MainViewer:
         self.cambound.draw_vision_box()
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
+        self.model.cam_bound_model.render_cams(self.screen)
 
 class GridView:
     def __init__(self, model, screen):

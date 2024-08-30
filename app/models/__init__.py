@@ -1,1 +1,1 @@
-from .data_model import *
+from .main_model import *
