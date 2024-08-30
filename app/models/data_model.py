@@ -1,6 +1,6 @@
 import h5py
 import config 
-
+from .input_processing import *
 class MainModel:
     def __init__(self, x, y, width, height):
         self.x = x
@@ -8,17 +8,26 @@ class MainModel:
         self.width = width
         self.height = height
 
-
         self.init_model_class()
-        
-
-    def move(self, dx, dy):
-        self.x += dx
-        self.y += dy
 
     def get_logging_data(self, path):
-        logging_data = h5py.File(path)
-    
+        self.logging_data = h5py.File(path)
+
+    def set_min_max_scan(self):
+        self.min_scan = int(self.logging_data['DATA_INFO']['initScan'][()].item())
+        self.max_scan = int(self.logging_data['DATA_INFO']['finScan'][()].item())
+
+    def parsing(self,current_scan):
+        self.current_scan_data = ScanData(self.logging_data,current_scan)    
+        self.current_scan_data.parsing_status()
+        self.current_scan_data.parsing_gps_into_meter()
+
+    def intersection_fusion(self):
+        pass
+
+    def output_processing(self):
+        pass
+
     def init_model_class(self):
         self.window_model = WindowModel()
         self.grid_model = GridModel()
@@ -73,7 +82,7 @@ class WindowModel(Observable):
 class GridModel(WindowModel):
     def __init__(self, width=1200, length=800):
         super().__init__(width, length)  # 부모 클래스인 WindowModel 초기화
-        self.color = (255, 250, 250)
+        self.color = (0, 0, 0)
         self.font_color = (200, 200, 200)
         self.update()
 
@@ -138,3 +147,4 @@ class CamChangeRightButtonModel(CamBoundModel):
     def  is_clicked(self, mouse_pos):
         return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
+    
