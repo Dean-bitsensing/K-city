@@ -4,6 +4,7 @@ from pyproj import Transformer
 class ScanData:
     def __init__(self, h5_dataset,current_scan):
         self.current_scan = current_scan
+        
         self.scan_data = h5_dataset['SCAN_{:05d}'.format(current_scan)]
         self.ip = 'ip'
         self.intersection_number = 1
