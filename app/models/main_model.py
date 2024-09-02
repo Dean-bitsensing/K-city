@@ -141,6 +141,10 @@ class CamBoundModel(WindowModel):
         # Determine which image is zoomed in, if any
         zoomed_image = None
         for i, idx in enumerate(cam_indices):
+            # print(f'idx : {idx}, cams : {cams}')
+            if idx >= len(self.cam_data_list):
+                break
+            
             if self.zoomed_in[idx]:
                 zoomed_image = (cams[i], (self.posx, self.posy), idx)
                 break
@@ -170,11 +174,14 @@ class CamBoundModel(WindowModel):
         for idx, pos in zip(cam_indices, positions):
             rect = pygame.Rect(pos[0], pos[1], int(self.width / 2), int(self.length / 2))
             if rect.collidepoint(mouse_pos):
+                
                 if not self.zoomed_in[idx]:
-                    self.zoomed_in = [False] * len(self.zoomed_in)
+                    self.zoomed_in = [False] * 20
                     self.zoomed_in[idx] = True
+                    # print(self.zoomed_in)
                 else:
                     self.zoomed_in[idx] = False
+                    # print(self.zoomed_in)
                 break  # Only one image can be clicked at a time
 
             # image = pygame.transform.scale(image, (int(self.width/2), int(self.length/2)))
