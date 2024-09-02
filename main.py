@@ -18,7 +18,7 @@ def main():
 
     clock = pygame.time.Clock()
 
-    
+    scandata = 0
     while viewer.running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -26,7 +26,7 @@ def main():
             else:
                 event_controller.handle_event(event)
         screen.fill((0, 0, 0))
-        viewer.draw()
+        viewer.draw(scandata)
         pygame.display.flip() # 화면 업데이트
 
         clock.tick(config.FPS)  # Limit frame rate to 60 FPS

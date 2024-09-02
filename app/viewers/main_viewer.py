@@ -22,13 +22,16 @@ class MainViewer:
         self.class_init()
         
 
-    def draw(self):
-       
+    def draw(self, scandata):
+        cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg', '../resources/6.jpg', '../resources/7.jpg', '../resources/8.jpg',]
+
         self.grid.draw_grid()
-        self.cambound.draw_vision_box()
+        # self.cambound.draw_vision_box()/
+        self.model.cam_bound_model.cam_list_load(cam_data_list)
+        self.model.cam_bound_model.render_cams(self.screen)
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
-        self.model.cam_bound_model.render_cams(self.screen)
+        
 
 class GridView:
     def __init__(self, model, screen):
@@ -81,6 +84,12 @@ class CamChangeLeftButtonView:
             (self.model.button_posx, self.model.button_posy, self.model.button_width, self.model.button_length)
             
         )
+        pygame.draw.rect(
+            self.screen, 
+            self.model.outline_color, 
+            (self.model.button_posx, self.model.button_posy, self.model.button_width, self.model.button_length),
+            2
+        )
 
 class CamChangeRightButtonView:
     def __init__(self, model, screen):
@@ -91,6 +100,11 @@ class CamChangeRightButtonView:
         pygame.draw.rect(
             self.screen, 
             self.model.color, 
-            (self.model.button_posx, self.model.button_posy, self.model.button_width, self.model.button_length)
-            
+            (self.model.button_posx, self.model.button_posy, self.model.button_width, self.model.button_length)   
+        )
+        pygame.draw.rect(
+            self.screen, 
+            self.model.outline_color, 
+            (self.model.button_posx, self.model.button_posy, self.model.button_width, self.model.button_length),
+            2
         )

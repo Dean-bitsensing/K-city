@@ -9,7 +9,7 @@ class MainModel:
         self.width = width
         self.height = height
 
-        self.cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg', '../resources/6.jpg', '../resources/7.jpg', '../resources/8.jpg',]
+        
         self.init_model_class()
         
 
@@ -23,7 +23,7 @@ class MainModel:
     def init_model_class(self):
         self.window_model = WindowModel()
         self.grid_model = GridModel()
-        self.cam_bound_model = CamBoundModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH, self.cam_data_list)
+        self.cam_bound_model = CamBoundModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH)
         self.cam_change_left_button_model = CamChangeLeftButtonModel()
         self.cam_change_right_button_model = CamChangeRightButtonModel()
         
@@ -89,12 +89,16 @@ class GridModel(WindowModel):
 
 
 class CamBoundModel(WindowModel):
-    def __init__(self, width=1200, length=800, cam_data_list=None):
-        super().__init__(width, length)  # 부모 클래스인 WindowModel 초기화
-        self.cam_data_list = cam_data_list if cam_data_list else []
+    def __init__(self, width=1200, length=800):
+        super().__init__(width, length)
+        self.cam_data_list = []
         self.current_page = 0
-        self.cams_per_page = 4  # 한 페이지에 표시할 최대 캠 데이터 수
+        self.cams_per_page = 4
+        self.zoomed_in = [False] * 20
         self.update()
+
+    def cam_list_load(self, cam_data_list):
+        self.cam_data_list = cam_data_list if cam_data_list else []
 
     def update(self):
         self.posx = self.CAM_BOUND_X
@@ -103,16 +107,16 @@ class CamBoundModel(WindowModel):
         self.length = self.CAM_BOUND_LENGTH
         self.color = config.WHITE
 
-        self.center_hor_line_start_pos = (self.GRID_WINDOW_WIDTH, int(self.length/2))
-        self.center_hor_line_end_pos = (self.WINDOW_WIDTH, int(self.length/2))
+        self.center_hor_line_start_pos = (self.GRID_WINDOW_WIDTH, int(self.length / 2))
+        self.center_hor_line_end_pos = (self.WINDOW_WIDTH, int(self.length / 2))
 
-        self.center_ver_line_start_pos = (self.GRID_WINDOW_WIDTH+int(self.width/2), 0)
-        self.center_ver_line_end_pos = (self.GRID_WINDOW_WIDTH+int(self.width/2), self.length)
+        self.center_ver_line_start_pos = (self.GRID_WINDOW_WIDTH + int(self.width / 2), 0)
+        self.center_ver_line_end_pos = (self.GRID_WINDOW_WIDTH + int(self.width / 2), self.length)
         
     def get_current_page_cams(self):
         start_idx = self.current_page * self.cams_per_page
         end_idx = start_idx + self.cams_per_page
-        return self.cam_data_list[start_idx:end_idx]
+        return self.cam_data_list[start_idx:end_idx], list(range(start_idx, end_idx))
 
     def next_page(self):
         if (self.current_page + 1) * self.cams_per_page < len(self.cam_data_list):
@@ -123,7 +127,10 @@ class CamBoundModel(WindowModel):
             self.current_page -= 1
 
     def render_cams(self, screen):
-        cams = self.get_current_page_cams()
+        if len(self.cam_data_list) == 0:
+            return
+        
+        cams, cam_indices = self.get_current_page_cams()
         positions = [
             (self.posx, self.posy),
             (self.center_ver_line_start_pos[0], self.posy),
@@ -131,10 +138,47 @@ class CamBoundModel(WindowModel):
             (self.center_ver_line_start_pos[0], self.center_hor_line_start_pos[1])
         ]
         
-        for cam, pos in zip(cams, positions):
+        # Determine which image is zoomed in, if any
+        zoomed_image = None
+        for i, idx in enumerate(cam_indices):
+            if self.zoomed_in[idx]:
+                zoomed_image = (cams[i], (self.posx, self.posy), idx)
+                break
+        
+        if zoomed_image:
+            # Render only the zoomed-in image
+            cam, pos, idx = zoomed_image
             image = pygame.image.load(cam)
-            image = pygame.transform.scale(image, (int(self.width/2), int(self.length/2)))
+            image = pygame.transform.scale(image, (self.width, self.length))
             screen.blit(image, pos)
+        else:
+            # Render all images at their normal size
+            for cam, pos in zip(cams, positions):
+                image = pygame.image.load(cam)
+                image = pygame.transform.scale(image, (int(self.width / 2), int(self.length / 2)))
+                screen.blit(image, pos)
+
+    def handle_image_click(self, mouse_pos):
+        # Handle click events for camera images
+        cams, cam_indices = self.get_current_page_cams()
+        positions = [
+            (self.posx, self.posy),
+            (self.center_ver_line_start_pos[0], self.posy),
+            (self.posx, self.center_hor_line_start_pos[1]),
+            (self.center_ver_line_start_pos[0], self.center_hor_line_start_pos[1])
+        ]
+        for idx, pos in zip(cam_indices, positions):
+            rect = pygame.Rect(pos[0], pos[1], int(self.width / 2), int(self.length / 2))
+            if rect.collidepoint(mouse_pos):
+                if not self.zoomed_in[idx]:
+                    self.zoomed_in = [False] * len(self.zoomed_in)
+                    self.zoomed_in[idx] = True
+                else:
+                    self.zoomed_in[idx] = False
+                break  # Only one image can be clicked at a time
+
+            # image = pygame.transform.scale(image, (int(self.width/2), int(self.length/2)))
+            # screen.blit(image, pos)
 
 class CamDataModel:
     def __init__(self, image_path):
@@ -153,6 +197,7 @@ class CamChangeLeftButtonModel(CamBoundModel):
         self.button_width = int(self.width / 30)
         self.button_length = 2 * int(self.length / 8)
         self.color = config.WHITE
+        self.outline_color = config.BLACK
     def is_clicked(self, mouse_pos):
         return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
@@ -170,7 +215,7 @@ class CamChangeRightButtonModel(CamBoundModel):
         self.button_width = int(self.width / 30)
         self.button_length = 2 * int(self.length / 8)
         self.color = config.WHITE
-    
+        self.outline_color = config.BLACK
     def  is_clicked(self, mouse_pos):
         return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
