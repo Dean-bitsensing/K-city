@@ -1,5 +1,5 @@
 import pygame
-import config
+from config import *
 
 class MainViewer:
     def __init__(self, model, screen):
@@ -12,7 +12,9 @@ class MainViewer:
     
 
     def class_init(self):
+        self.background_image = BackGroundImageView(self.model.grid_model, self.screen)
         self.grid = GridView(self.model.grid_model, self.screen)
+        self.radar_postions = MultipleRadarPositionView(self.model,self.screen)
         self.cambound = CamBoundView(self.model.cam_bound_model, self.screen)
         self.cam_left_button = CamChangeLeftButtonView(self.model.cam_change_left_button_model, self.screen)
         self.cam_right_button = CamChangeRightButtonView(self.model.cam_change_right_button_model, self.screen)
@@ -33,6 +35,7 @@ class MainViewer:
         self.cam_right_button.draw_vision_next_list_button()
         
 
+
 class GridView:
     def __init__(self, model, screen):
         self.screen = screen
@@ -41,16 +44,16 @@ class GridView:
 
     def draw_grid(self):
         
-        font = pygame.font.SysFont("arial", config.FONT_SIZE, True, False)
+        font = pygame.font.SysFont("arial", FONT_SIZE, True, False)
 
         for x in range(self.model.start_posx, self.model.end_posx, self.model.interval_x):
             pygame.draw.line(self.screen, self.model.color, (x, 0), (x, self.model.GRID_WINDOW_LENGTH))
-            label = font.render(str(int(x//config.SPLITED_SCALE_RATE_X))+"m", True, self.model.font_color)
-            self.screen.blit(label, (x, self.model.GRID_WINDOW_LENGTH - config.GRID_X_SIZE))
+            label = font.render(str(int(x//SPLITED_SCALE_RATE_X))+"m", True, self.model.font_color)
+            self.screen.blit(label, (x, self.model.GRID_WINDOW_LENGTH - GRID_X_SIZE))
 
         for y in range(self.model.start_posy, self.model.end_posy, self.model.interval_y):
             pygame.draw.line(self.screen, self.model.color, (0, y), (self.model.GRID_WINDOW_WIDTH, y))
-            label = font.render(str(y//config.SCALED_RATE_Y)+"m", True, self.model.font_color)
+            label = font.render(str(y//SCALED_RATE_Y)+"m", True, self.model.font_color)
             self.screen.blit(label, (0, y))
         # for y in range(center_y, 0, -ToolConfig.GRID_Y_SIZE):
         #     pygame.draw.line(self.screen, grid_color, (0, y), (ToolConfig.GRID_WINDOW_WIDTH, y))
@@ -108,3 +111,24 @@ class CamChangeRightButtonView:
             (self.model.button_posx, self.model.button_posy, self.model.button_width, self.model.button_length),
             2
         )
+
+class BackGroundImageView:
+    def __init__(self, model, screen):
+        self.model = model
+        self.screen = screen
+        self.background_image = pygame.image.load(BACKGROUND_IMAGE_PATH)
+
+    def draw_background_image(self):
+        background_image = pygame.transform.scale(self.background_image, (self.model.GRID_WINDOW_WIDTH, self.model.GRID_WINDOW_LENGTH))
+        self.screen.blit(background_image, (0, 0))
+
+class MultipleRadarPositionView:
+    def __init__(self, model, screen):
+        self.model = model
+        self.screen = screen
+
+    def draw_radar_positions(self):
+        #need to consider extending to draw multiple radars
+        radar_posx = self.model.current_scan_data.radar_posx
+        radar_posy = self.model.current_scan_data.radar_posy
+        pygame.draw.circle(self.screen, RED, (radar_posx, radar_posy), 20, 0)

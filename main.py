@@ -1,14 +1,16 @@
 import pygame
 from app import *
-import config
+from config import *
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((config.WINDOW_WIDTH, config.WINDOW_LENGTH), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
 
     # Model
     rect_model = MainModel(50, 50, 60, 60)
+    rect_model.get_logging_data(FILE_PATH)
+    rect_model.set_min_max_scan()
 
     # View
     viewer = MainViewer(rect_model, screen)
@@ -18,19 +20,27 @@ def main():
 
     clock = pygame.time.Clock()
 
-    scandata = 0
+    current_scan = rect_model.min_scan
+
     while viewer.running:
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 viewer.running = False
             else:
                 event_controller.handle_event(event)
+
         screen.fill((0, 0, 0))
-        viewer.draw(scandata)
+        rect_model.parsing(current_scan)
+        viewer.draw()
         pygame.display.flip() # 화면 업데이트
 
-        clock.tick(config.FPS)  # Limit frame rate to 60 FPS
+        clock.tick(FPS)  # Limit frame rate to 60 FPS
 
+        current_scan += 1
+
+        if current_scan > rect_model.max_scan:
+            break
     pygame.quit()
 
 if __name__ == "__main__":
