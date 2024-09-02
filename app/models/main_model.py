@@ -2,14 +2,11 @@ import h5py
 import config 
 from .input_processing import *
 import pygame
+import io, os
+import cv2
 
 class MainModel:
-    def __init__(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
+    def __init__(self):
         
         self.init_model_class()
 
@@ -24,6 +21,7 @@ class MainModel:
         self.current_scan_data = ScanData(self.logging_data,current_scan)    
         self.current_scan_data.parsing_status()
         self.current_scan_data.parsing_gps_into_meter()
+        self.current_scan_data.parsing_image()
 
     def intersection_fusion(self):
         pass
@@ -46,6 +44,11 @@ class MainModel:
         self.cam_change_left_button_model = CamChangeLeftButtonModel(width, length)
         self.cam_change_right_button_model = CamChangeRightButtonModel(width, length)
 
+    def get_h5_datas(self, directory):
+    # 폴더 내부의 모든 파일 중 .h5 확장자를 가진 파일을 리스트로 반환
+        h5_files = [file for file in os.listdir(directory) if file.endswith('.h5')]
+        return h5_files
+    
 class Observable:
     def __init__(self):
         self._observers = []
@@ -108,8 +111,18 @@ class CamBoundModel(WindowModel):
         self.zoomed_in = [False] * 20
         self.update()
 
-    def cam_list_load(self, cam_data_list):
-        self.cam_data_list = cam_data_list if cam_data_list else []
+    def cam_list_load(self, image):
+        fsub = io.BytesIO(image)
+        img = pygame.image.load(fsub, 'jpg')
+        # img = pygame.surfarray.array3d(img)
+        # if img.shape[-1] == 3:  # 3채널 이미지일 때
+        #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # img = pygame.surfarray.make_surface(img)
+        # img_rect = pygame.Rect(ToolConfig.CAM_POS_X, 0, ToolConfig.CAM_WINDOW_WIDTH, ToolConfig.CAM_WINDOW_LENGTH)
+
+        self.cam_data_list = [img, img] # TODO
+        # self.cam_data_list = cam_data_list if cam_data_list else []
+
 
     def update(self):
         self.posx = self.CAM_BOUND_X
@@ -152,7 +165,6 @@ class CamBoundModel(WindowModel):
         # Determine which image is zoomed in, if any
         zoomed_image = None
         for i, idx in enumerate(cam_indices):
-            # print(f'idx : {idx}, cams : {cams}')
             if idx >= len(self.cam_data_list):
                 break
             
@@ -163,15 +175,16 @@ class CamBoundModel(WindowModel):
         if zoomed_image:
             # Render only the zoomed-in image
             cam, pos, idx = zoomed_image
-            image = pygame.image.load(cam)
+            image = cam  # cam already contains the loaded image
             image = pygame.transform.scale(image, (self.width, self.length))
             screen.blit(image, pos)
         else:
             # Render all images at their normal size
             for cam, pos in zip(cams, positions):
-                image = pygame.image.load(cam)
+                image = cam  # cam already contains the loaded image
                 image = pygame.transform.scale(image, (int(self.width / 2), int(self.length / 2)))
                 screen.blit(image, pos)
+
 
     def handle_image_click(self, mouse_pos):
         # Handle click events for camera images

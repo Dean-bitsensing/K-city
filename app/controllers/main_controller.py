@@ -1,13 +1,19 @@
 import pygame
 import config
 
+SKIP_SIZE = 1
+BIG_SKIP_SIZE = 20
+LARGE_SKIP_SIZE = 100
+
 class MainController:
     def __init__(self, model, viewer):
         self.model = model
         self.viewer = viewer
 
     def handle_event(self, event):
-        if event.type == pygame.VIDEORESIZE:
+        if event.type == pygame.QUIT:
+            self.viewer.running = False
+        elif event.type == pygame.VIDEORESIZE:
             self.update_config(event.w, event.h)
         elif event.type == pygame.KEYDOWN:
             self.handle_keydown(event)
@@ -17,15 +23,52 @@ class MainController:
 
     def handle_keydown(self, event):
         if event.key == pygame.K_LEFT:
-            self.model.move(-5, 0)
+            self.viewer.paused = True
+            if self.viewer.current_scan- SKIP_SIZE > self.model.min_scan:
+                self.viewer.current_scan -= SKIP_SIZE
+            else:
+                self.viewer.current_scan = self.model.min_scan
+                
         elif event.key == pygame.K_RIGHT:
-            self.model.move(5, 0)
+            self.viewer.paused = True
+            if self.viewer.current_scan + SKIP_SIZE < self.model.max_scan:
+                self.viewer.current_scan += SKIP_SIZE
+            else:
+                self.viewer.current_scan = self.model.max_scan
+            
         elif event.key == pygame.K_UP:
-            self.model.move(0, -5)
+            self.viewer.paused = True
+            if self.viewer.current_scan + BIG_SKIP_SIZE < self.model.max_scan:
+                self.viewer.current_scan += BIG_SKIP_SIZE
+            else:
+                self.viewer.current_scan = self.model.max_scan
+
         elif event.key == pygame.K_DOWN:
-            self.model.move(0, 5)
+            self.viewer.paused = True
+            if self.viewer.current_scan- BIG_SKIP_SIZE > self.model.min_scan:
+                self.viewer.current_scan -= BIG_SKIP_SIZE
+            else:
+                self.viewer.current_scan = self.model.min_scan
+
+        elif event.key == pygame.K_PERIOD:
+            self.viewer.paused = True
+            if self.viewer.current_scan + LARGE_SKIP_SIZE < self.model.max_scan:
+                self.viewer.current_scan += LARGE_SKIP_SIZE
+            else:
+                self.viewer.current_scan = self.model.max_scan
+
+        elif event.key == pygame.K_COMMA:
+            self.viewer.paused = True
+            if self.viewer.current_scan- LARGE_SKIP_SIZE > self.model.min_scan:
+                self.viewer.current_scan -= LARGE_SKIP_SIZE
+            else:
+                self.viewer.current_scan = self.model.min_scan
+
         elif event.key == pygame.K_ESCAPE:
             self.viewer.running = False
+
+        elif event.key == pygame.K_SPACE:
+            self.viewer.paused = not self.viewer.paused
 
     def handle_mouse_click(self, mouse_pos):
         # Check if left or right buttons are clicked

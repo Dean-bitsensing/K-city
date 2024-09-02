@@ -7,7 +7,9 @@ class MainViewer:
         self.screen = screen
 
         self.running = True
+        self.paused = True
 
+        self.current_scan = 0
         self.class_init()
     
 
@@ -24,16 +26,17 @@ class MainViewer:
         self.class_init()
         
 
-    def draw(self, scandata):
+    def draw(self):
         # cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg', '../resources/6.jpg', '../resources/7.jpg', '../resources/8.jpg',]
         cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg']
         self.grid.draw_grid()
         # self.cambound.draw_vision_box()/
-        self.model.cam_bound_model.cam_list_load(cam_data_list)
+        self.model.cam_bound_model.cam_list_load(self.model.current_scan_data.image)
         self.model.cam_bound_model.render_cams(self.screen)
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
-        
+    
+    
 
 
 class GridView:
