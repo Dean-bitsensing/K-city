@@ -178,19 +178,14 @@ class CamBoundModel(WindowModel):
                 if not self.zoomed_in[idx]:
                     self.zoomed_in = [False] * 20
                     self.zoomed_in[idx] = True
-                    # print(self.zoomed_in)
+                
                 else:
                     self.zoomed_in[idx] = False
-                    # print(self.zoomed_in)
+                    
                 break  # Only one image can be clicked at a time
 
-            # image = pygame.transform.scale(image, (int(self.width/2), int(self.length/2)))
-            # screen.blit(image, pos)
 
-class CamDataModel:
-    def __init__(self, image_path):
-        self.image = pygame.image.load(image_path)
-        self.image = pygame.transform.scale(self.image, (300, 200))  # 캠 이미지 크기 조절
+
 
 class CamChangeLeftButtonModel(CamBoundModel):
     def __init__(self, width=1200, length=800):
