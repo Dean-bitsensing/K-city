@@ -10,18 +10,24 @@ class MainModel:
         
         self.init_model_class()
 
-    def get_logging_data(self, path):
-        self.logging_data = h5py.File(path)
+    def get_logging_data(self, files:list):
+        self.logging_data = []
+        for file in files:
+            self.logging_data.append(h5py.File(file))
 
     def set_min_max_scan(self):
-        self.min_scan = int(self.logging_data['DATA_INFO']['initScan'][()].item())
-        self.max_scan = int(self.logging_data['DATA_INFO']['finScan'][()].item())
+        self.min_scan = int(self.logging_data[0]['DATA_INFO']['initScan'][()].item())
+        self.max_scan = int(self.logging_data[0]['DATA_INFO']['finScan'][()].item())
 
     def parsing(self,current_scan):
-        self.current_scan_data = ScanData(self.logging_data,current_scan)    
-        self.current_scan_data.parsing_status()
-        self.current_scan_data.parsing_gps_into_meter()
-        self.current_scan_data.parsing_image()
+        self.current_scan_data = [0] * len(self.logging_data)
+        
+        for idx, file in enumerate(self.logging_data):
+            
+            self.current_scan_data[idx] = ScanData(file, current_scan)    
+            self.current_scan_data[idx].parsing_status()
+            self.current_scan_data[idx].parsing_gps_into_meter()
+            self.current_scan_data[idx].parsing_image()
 
     def intersection_fusion(self):
         pass
@@ -46,7 +52,7 @@ class MainModel:
 
     def get_h5_datas(self, directory):
     # 폴더 내부의 모든 파일 중 .h5 확장자를 가진 파일을 리스트로 반환
-        h5_files = [file for file in os.listdir(directory) if file.endswith('.h5')]
+        h5_files = [f'{directory}/'+file for file in os.listdir(directory) if file.endswith('.h5')]
         return h5_files
     
 class Observable:
@@ -111,17 +117,18 @@ class CamBoundModel(WindowModel):
         self.zoomed_in = [False] * 20
         self.update()
 
-    def cam_list_load(self, image):
-        fsub = io.BytesIO(image)
-        img = pygame.image.load(fsub, 'jpg')
-        # img = pygame.surfarray.array3d(img)
-        # if img.shape[-1] == 3:  # 3채널 이미지일 때
-        #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # img = pygame.surfarray.make_surface(img)
-        # img_rect = pygame.Rect(ToolConfig.CAM_POS_X, 0, ToolConfig.CAM_WINDOW_WIDTH, ToolConfig.CAM_WINDOW_LENGTH)
+    def cam_list_load(self, image_sets):
 
-        self.cam_data_list = [img, img] # TODO
-        # self.cam_data_list = cam_data_list if cam_data_list else []
+        
+        self.cam_data_list = []
+        for idx in range(len(image_sets)):
+            image = image_sets[idx].image
+            fsub = io.BytesIO(image)
+            img = pygame.image.load(fsub, 'jpg')
+            
+            self.cam_data_list.append(img) # TODO
+        
+        
 
 
     def update(self):
@@ -155,6 +162,7 @@ class CamBoundModel(WindowModel):
             return
         
         cams, cam_indices = self.get_current_page_cams()
+        
         positions = [
             (self.posx, self.posy),
             (self.center_ver_line_start_pos[0], self.posy),
