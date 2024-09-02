@@ -102,12 +102,11 @@ class BackGroundImageView:
     def __init__(self, model, screen):
         self.model = model
         self.screen = screen
-        self.background_image = pygame.image.load(BACKGROUND_IMAGE_PATH)
 
     def draw_background_image(self):
-        background_image = pygame.transform.scale(self.background_image, (self.model.GRID_WINDOW_WIDTH, self.model.GRID_WINDOW_LENGTH))
+        background_image = pygame.image.load(BACKGROUND_IMAGE_PATH)
         self.screen.blit(background_image, (0, 0))
-
+        
 class MultipleRadarPositionView:
     def __init__(self, model, screen):
         self.model = model

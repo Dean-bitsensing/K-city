@@ -8,7 +8,7 @@ def main():
     pygame.display.set_caption('K-City develop tool')
 
     # Model
-    rect_model = MainModel(50, 50, 60, 60)
+    rect_model = MainModel(50, 50, 720, 720)
     rect_model.get_logging_data(FILE_PATH)
     rect_model.set_min_max_scan()
 
@@ -33,6 +33,10 @@ def main():
         screen.fill((0, 0, 0))
         rect_model.parsing(current_scan)
         viewer.draw()
+        mouse_pos = pygame.mouse.get_pos()
+    
+    # 마우스 위치 출력
+        print(f"Mouse position: {mouse_pos}")
         pygame.display.flip() # 화면 업데이트
 
         clock.tick(FPS)  # Limit frame rate to 60 FPS

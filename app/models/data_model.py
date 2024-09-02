@@ -1,6 +1,8 @@
 import h5py
 import config 
 from .input_processing import *
+
+
 class MainModel:
     def __init__(self, x, y, width, height):
         self.x = x
@@ -21,6 +23,7 @@ class MainModel:
         self.current_scan_data = ScanData(self.logging_data,current_scan)    
         self.current_scan_data.parsing_status()
         self.current_scan_data.parsing_gps_into_meter()
+        parsing_image_data_from_google(self.width,self.height)
 
     def intersection_fusion(self):
         pass
