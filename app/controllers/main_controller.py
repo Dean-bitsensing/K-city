@@ -32,11 +32,11 @@ class MainController:
         if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
             self.model.cam_bound_model.previous_page()
             self.model.cam_bound_model.zoomed_in = [False] * 20
-            print("Left button clicked!")
+            
         elif self.model.cam_change_right_button_model.is_clicked(mouse_pos):
             self.model.cam_bound_model.next_page()
             self.model.cam_bound_model.zoomed_in = [False] * 20
-            print("Right button clicked!")
+            
         else:
             self.model.cam_bound_model.handle_image_click(mouse_pos)
 
