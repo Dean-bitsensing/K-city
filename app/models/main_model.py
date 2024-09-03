@@ -3,6 +3,7 @@ import config
 from .input_processing import *
 import pygame
 import io, os
+from pathlib import Path
 import cv2
 
 class MainModel:
@@ -23,12 +24,18 @@ class MainModel:
         self.current_scan_data = [0] * len(self.logging_data)
         
         for idx, file in enumerate(self.logging_data):
-            
+            file_path = Path(file.filename)
+            file_stem = file_path.stem 
+            ip = file_stem.split('_')[-1]
             self.current_scan_data[idx] = ScanData(file, current_scan)    
             self.current_scan_data[idx].parsing_status()
             self.current_scan_data[idx].parsing_gps_into_meter()
             self.current_scan_data[idx].parsing_image()
-
+            self.current_scan_data[idx].ip = ip
+            
+        if not os.path.exists(BACKGROUND_IMAGE_PATH):
+            parsing_image_data_from_google()
+    
     def intersection_fusion(self):
         pass
 
@@ -96,7 +103,7 @@ class GridModel(WindowModel):
     def __init__(self, width=1200, length=800):
         super().__init__(width, length)  # 부모 클래스인 WindowModel 초기화
         self.color = (0, 0, 0)
-        self.font_color = (200, 200, 200)
+        self.font_color = (0, 0, 0)
         self.update()
 
     def update(self):

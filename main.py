@@ -3,8 +3,6 @@ from app import *
 from config import *
 
 
-LOGGING_DATA_PATH = r'Logging_datas'
-
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_LENGTH), pygame.RESIZABLE)
@@ -12,9 +10,10 @@ def main():
 
     # Model
     model = MainModel()
-    logging_datas = model.get_h5_datas(LOGGING_DATA_PATH)
+    logging_datas = model.get_h5_datas(KCITY_FOLDER_PATH)
     model.get_logging_data(logging_datas)
     model.set_min_max_scan()
+    
     
     
     # View

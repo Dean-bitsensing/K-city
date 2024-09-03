@@ -30,9 +30,10 @@ class MainViewer:
     def draw(self):
         # cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg', '../resources/6.jpg', '../resources/7.jpg', '../resources/8.jpg',]
         cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg']
+        self.background_image.draw_background_image()
         self.grid.draw_grid()
+        self.radar_postions.draw_radar_positions()
         # self.cambound.draw_vision_box()/
-        
         self.model.cam_bound_model.cam_list_load(self.model.current_scan_data)
         self.model.cam_bound_model.render_cams(self.screen)
         self.cam_left_button.draw_vision_next_list_button()
@@ -51,12 +52,25 @@ class GridView:
         
         font = pygame.font.SysFont("arial", FONT_SIZE, True, False)
 
-        for x in range(self.model.start_posx, self.model.end_posx, self.model.interval_x):
+        center_x = (self.model.start_posx + self.model.end_posx)//2
+        center_y = (self.model.start_posy + self.model.end_posy)//2
+
+        for x in range(center_x, self.model.end_posx, self.model.interval_x):
             pygame.draw.line(self.screen, self.model.color, (x, 0), (x, self.model.GRID_WINDOW_LENGTH))
             label = font.render(str(int(x//SPLITED_SCALE_RATE_X))+"m", True, self.model.font_color)
             self.screen.blit(label, (x, self.model.GRID_WINDOW_LENGTH - GRID_X_SIZE))
 
-        for y in range(self.model.start_posy, self.model.end_posy, self.model.interval_y):
+        for x in range(center_x, self.model.start_posx, - self.model.interval_x):
+            pygame.draw.line(self.screen, self.model.color, (x, 0), (x, self.model.GRID_WINDOW_LENGTH))
+            label = font.render(str(int(x//SPLITED_SCALE_RATE_X))+"m", True, self.model.font_color)
+            self.screen.blit(label, (x, self.model.GRID_WINDOW_LENGTH - GRID_X_SIZE))
+
+        for y in range(center_y, self.model.end_posy, self.model.interval_y):
+            pygame.draw.line(self.screen, self.model.color, (0, y), (self.model.GRID_WINDOW_WIDTH, y))
+            label = font.render(str(y//SCALED_RATE_Y)+"m", True, self.model.font_color)
+            self.screen.blit(label, (0, y))
+
+        for y in range(center_y, self.model.start_posy, -self.model.interval_y):
             pygame.draw.line(self.screen, self.model.color, (0, y), (self.model.GRID_WINDOW_WIDTH, y))
             label = font.render(str(y//SCALED_RATE_Y)+"m", True, self.model.font_color)
             self.screen.blit(label, (0, y))
@@ -124,7 +138,8 @@ class BackGroundImageView:
 
     def draw_background_image(self):
         background_image = pygame.image.load(BACKGROUND_IMAGE_PATH)
-        self.screen.blit(background_image, (0, 0))
+        resized_background_image = pygame.transform.scale(background_image, (self.model.GRID_WINDOW_WIDTH ,self.model.GRID_WINDOW_LENGTH))
+        self.screen.blit(resized_background_image, (0, 0))
         
 class MultipleRadarPositionView:
     def __init__(self, model, screen):
@@ -132,7 +147,22 @@ class MultipleRadarPositionView:
         self.screen = screen
 
     def draw_radar_positions(self):
+        center_x = self.model.window_model.GRID_WINDOW_WIDTH//2
+        center_y = self.model.window_model.GRID_WINDOW_LENGTH//2
+
+        for data in self.model.current_scan_data:
         #need to consider extending to draw multiple radars
-        radar_posx = self.model.current_scan_data.radar_posx
-        radar_posy = self.model.current_scan_data.radar_posy
-        pygame.draw.circle(self.screen, RED, (radar_posx, radar_posy), 20, 0)
+            radar_posx = data.radar_posx
+            radar_posy = data.radar_posy
+            pygame.draw.circle(self.screen, RED, (center_x + radar_posx, center_y - radar_posy), 5, 0)
+            font = pygame.font.Font(None, 20)
+            text = font.render(data.ip, True, RED)  # 렌더링할 텍스트와 색상
+            text_rect = text.get_rect()
+
+            # 텍스트 위치 설정 (원 아래)
+            text_rect.center = (center_x + radar_posx, center_y - radar_posy + 10)  # 원 아래로 10 픽셀만큼 떨어뜨림
+
+            # 텍스트 화면에 표시
+            self.screen.blit(text, text_rect)
+            print( radar_posx,  radar_posy)
+        print("=============")
