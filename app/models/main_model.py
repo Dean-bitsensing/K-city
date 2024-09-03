@@ -16,21 +16,9 @@ class MainModel:
         for file in files:
             self.logging_data.append(h5py.File(file))
 
-    def set_min_max_scan(self): # 여러개의 logging file중 가장 작은 값으로 설정해야함.
-        
-        self.min_scan = -1
-        self.max_scan = 999999
-
-        for file in self.logging_data:
-            min = int(file['DATA_INFO']['initScan'][()].item())
-            max = int(file['DATA_INFO']['finScan'][()].item())
-
-            if min > self.min_scan:
-                self.min_scan = min
-            
-            if max < self.max_scan:
-                self.max_scan = max
-            
+    def set_min_max_scan(self):
+        self.min_scan = int(self.logging_data[0]['DATA_INFO']['initScan'][()].item())
+        self.max_scan = int(self.logging_data[0]['DATA_INFO']['finScan'][()].item())
 
     def parsing(self,current_scan):
         self.current_scan_data = [0] * len(self.logging_data)
@@ -41,8 +29,9 @@ class MainModel:
             ip = file_stem.split('_')[-1]
             self.current_scan_data[idx] = ScanData(file, current_scan)    
             self.current_scan_data[idx].parsing_status()
-            self.current_scan_data[idx].parsing_gps_into_meter()
+            self.current_scan_data[idx].parsing_gps_into_meter(self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
             self.current_scan_data[idx].parsing_image()
+            self.current_scan_data[idx].parsing_vision_object_data()
             self.current_scan_data[idx].ip = ip
             
         if not os.path.exists(BACKGROUND_IMAGE_PATH):
@@ -121,7 +110,7 @@ class GridModel(WindowModel):
     def update(self):
         self.start_posx = 0
         self.end_posx = self.GRID_WINDOW_WIDTH  # WindowModel의 속성 직접 사용
-        self.interval_x = int(config.GRID_X_SIZE * config.SPLITED_SCALE_RATE)
+        self.interval_x = int(config.GRID_X_SIZE )
         self.start_posy = 0
         self.end_posy = self.GRID_WINDOW_LENGTH
         self.interval_y = int(config.GRID_Y_SIZE)
