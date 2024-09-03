@@ -13,7 +13,7 @@ def main():
     # Model
     model = MainModel()
     logging_datas = model.get_h5_datas(LOGGING_DATA_PATH)
-    model.get_logging_data(logging_datas)
+    model.get_logging_data(logging_datas) 
     model.set_min_max_scan()
     
     
@@ -25,12 +25,10 @@ def main():
  
     clock = pygame.time.Clock()
 
-    
     viewer.current_scan = model.min_scan
     viewer.before_scan = viewer.current_scan
     while viewer.running:
         
-
         screen.fill((0, 0, 0))
         if viewer.current_scan != viewer.before_scan:
             model.parsing(viewer.current_scan)
@@ -38,11 +36,9 @@ def main():
         pygame.display.flip() # 화면 업데이트
 
         clock.tick(FPS)  # Limit frame rate to 60 FPS
-
         
         if not viewer.paused:
             viewer.current_scan += 1
-
 
         for event in pygame.event.get():          
             event_controller.handle_event(event)

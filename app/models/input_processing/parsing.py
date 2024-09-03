@@ -35,6 +35,9 @@ class ScanData:
         # 두 좌표 사이의 X, Y 차이 계산
         self.radar_posx = utm_x2 - utm_x1
         self.radar_posy = utm_y2 - utm_y1
+    
+    def parsing_image(self):
+        self.image = self.scan_data['Image'][()]
 
 def parsing_image_data_from_google(width,height):
     map_url = get_static_map_url(LAT_LANDMARK, LON_LANDMARK,width,height)
@@ -67,8 +70,7 @@ def parsing_image_data_from_google(width,height):
         sys.exit()
 
         
-         
-
+        
 def get_static_map_url(lat, lng, width, height, zoom=17, maptype='roadmap'):
     return f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lng}&zoom={zoom}&size={width}x{height}&maptype={maptype}&key={API_KEY}"
 

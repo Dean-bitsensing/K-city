@@ -70,7 +70,7 @@ INDIGO =        (0x4B,0x00,0x82)
 AQUAMARINE =    (0x7F,0xFF,0xD4)
 SKYBLUE =       (0x87,0xCE,0xEB)
 #fps(Frames Per Second)
-FPS = 10
+FPS = 15
 
 MODE_ON = 1
 MODE_OFF = 0
