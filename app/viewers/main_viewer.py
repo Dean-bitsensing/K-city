@@ -168,3 +168,11 @@ class MultipleRadarPositionView:
         for data in self.model.current_scan_data:
             for vobj in data.vision_object_data:
                 pygame.draw.circle(self.screen, GREEN, (self.center_x - vobj.posx, self.center_y - vobj.posy), 2, 0)
+
+class DataInfoWindowView:
+    def __init__(self, model, screen):
+        self.screen = screen
+        self.model = model
+    
+    def draw_data_info_window(self):
+        pygame.draw.rect(self.screen, self.model.color, (self.model.posx, self.model.posy, self.model.width, self.model.length),2)
