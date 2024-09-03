@@ -24,7 +24,6 @@ class ScanData:
     def parsing_gps_into_meter(self):
         self.longitude = self.status_json['gps']['longitude']
         self.latitiude = self.status_json['gps']['latitude']
-        print(self.latitiude, self.longitude)
 
         # WGS84 좌표계 (EPSG:4326)와 UTM Zone 32N 좌표계 (EPSG:32632)를 정의하는 변환기 생성
         transformer = Transformer.from_crs('epsg:4326', 'epsg:32632')

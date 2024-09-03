@@ -16,9 +16,21 @@ class MainModel:
         for file in files:
             self.logging_data.append(h5py.File(file))
 
-    def set_min_max_scan(self):
-        self.min_scan = int(self.logging_data[0]['DATA_INFO']['initScan'][()].item())
-        self.max_scan = int(self.logging_data[0]['DATA_INFO']['finScan'][()].item())
+    def set_min_max_scan(self): # 여러개의 logging file중 가장 작은 값으로 설정해야함.
+        
+        self.min_scan = -1
+        self.max_scan = 999999
+
+        for file in self.logging_data:
+            min = int(file['DATA_INFO']['initScan'][()].item())
+            max = int(file['DATA_INFO']['finScan'][()].item())
+
+            if min > self.min_scan:
+                self.min_scan = min
+            
+            if max < self.max_scan:
+                self.max_scan = max
+            
 
     def parsing(self,current_scan):
         self.current_scan_data = [0] * len(self.logging_data)

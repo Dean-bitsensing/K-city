@@ -15,7 +15,6 @@ def main():
     model.set_min_max_scan()
     
     
-    
     # View
     viewer = MainViewer(model, screen)
     model.parsing(viewer.current_scan)
@@ -24,12 +23,10 @@ def main():
  
     clock = pygame.time.Clock()
 
-    
     viewer.current_scan = model.min_scan
     viewer.before_scan = viewer.current_scan
     while viewer.running:
         
-
         screen.fill((0, 0, 0))
         if viewer.current_scan != viewer.before_scan:
             model.parsing(viewer.current_scan)
@@ -37,11 +34,9 @@ def main():
         pygame.display.flip() # 화면 업데이트
 
         clock.tick(FPS)  # Limit frame rate to 60 FPS
-
         
         if not viewer.paused:
             viewer.current_scan += 1
-
 
         for event in pygame.event.get():          
             event_controller.handle_event(event)
