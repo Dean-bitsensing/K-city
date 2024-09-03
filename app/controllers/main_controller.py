@@ -73,12 +73,20 @@ class MainController:
     def handle_mouse_click(self, mouse_pos):
         # Check if left or right buttons are clicked
         if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
-            self.model.cam_bound_model.previous_page()
-            self.model.cam_bound_model.zoomed_in = [False] * 20
+            if True in self.model.cam_bound_model.zoomed_in:
+                #다른기능
+                pass
+            else:
+                self.model.cam_bound_model.previous_page()
+                self.model.cam_bound_model.zoomed_in = [False] * 20
             
         elif self.model.cam_change_right_button_model.is_clicked(mouse_pos):
-            self.model.cam_bound_model.next_page()
-            self.model.cam_bound_model.zoomed_in = [False] * 20
+            if True in self.model.cam_bound_model.zoomed_in:
+                #다른기능
+                pass
+            else:
+                self.model.cam_bound_model.next_page()
+                self.model.cam_bound_model.zoomed_in = [False] * 20
             
         else:
             self.model.cam_bound_model.handle_image_click(mouse_pos)
