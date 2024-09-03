@@ -8,7 +8,7 @@ import cv2
 
 class MainModel:
     def __init__(self):
-        
+        self.logging_data_num = 0
         self.init_model_class()
 
     def get_logging_data(self, files:list):
@@ -60,6 +60,7 @@ class MainModel:
         self.cam_bound_model = CamBoundModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH)
         self.cam_change_left_button_model = CamChangeLeftButtonModel()
         self.cam_change_right_button_model = CamChangeRightButtonModel()
+        self.data_info_window_model = DataInfoWindowModel()
         
 
     def window_resize(self, width, length):
@@ -68,6 +69,7 @@ class MainModel:
         self.cam_bound_model = CamBoundModel(width, length)
         self.cam_change_left_button_model = CamChangeLeftButtonModel(width, length)
         self.cam_change_right_button_model = CamChangeRightButtonModel(width, length)
+        self.data_info_window_model = DataInfoWindowModel(width, length)
 
     def get_h5_datas(self, directory):
     # 폴더 내부의 모든 파일 중 .h5 확장자를 가진 파일을 리스트로 반환
@@ -94,15 +96,20 @@ class WindowModel(Observable):
         self.update_sizes()
 
     def update_sizes(self):
-        self.GRID_WINDOW_WIDTH = int(self.WINDOW_WIDTH*3/5)
-        self.GRID_WINDOW_LENGTH = int(self.WINDOW_LENGTH * 9 / 10)
-        self.HALF_GRID_WINDOW_WIDTH = int(self.GRID_WINDOW_WIDTH // 2)
-        self.HALF_GRID_WINDOW_LENGTH = int(self.GRID_WINDOW_LENGTH // 2)
+        self.GRID_WINDOW_WIDTH          = int(self.WINDOW_WIDTH*3/5)
+        self.GRID_WINDOW_LENGTH         = int(self.WINDOW_LENGTH * 9 / 10)
+        self.HALF_GRID_WINDOW_WIDTH     = int(self.GRID_WINDOW_WIDTH // 2)
+        self.HALF_GRID_WINDOW_LENGTH    = int(self.GRID_WINDOW_LENGTH // 2)
 
-        self.CAM_BOUND_X = int(self.GRID_WINDOW_WIDTH)
-        self.CAM_BOUND_Y = 0
-        self.CAM_BOUND_WIDTH = int(self.WINDOW_WIDTH - self.GRID_WINDOW_WIDTH)
-        self.CAM_BOUND_LENGTH = int(self.CAM_BOUND_WIDTH * 576 / 1024)
+        self.CAM_BOUND_X        = int(self.GRID_WINDOW_WIDTH)
+        self.CAM_BOUND_Y        = 0
+        self.CAM_BOUND_WIDTH    = int(self.WINDOW_WIDTH - self.GRID_WINDOW_WIDTH)
+        self.CAM_BOUND_LENGTH   = int(self.CAM_BOUND_WIDTH * 576 / 1024)
+
+        self.DATA_INFO_X        = int(self.GRID_WINDOW_WIDTH)
+        self.DATA_INFO_Y        = self.CAM_BOUND_LENGTH
+        self.DATA_INFO_WIDTH    = int(self.WINDOW_WIDTH - self.GRID_WINDOW_WIDTH)
+        self.DATA_INFO_LENGTH   = int(self.DATA_INFO_WIDTH/2)
 
         self.notify_observers()  # Notify observers when sizes are updated
 
@@ -137,8 +144,6 @@ class CamBoundModel(WindowModel):
         self.update()
 
     def cam_list_load(self, image_sets):
-
-        
         self.cam_data_list = []
         for idx in range(len(image_sets)):
             image = image_sets[idx].image
@@ -147,9 +152,6 @@ class CamBoundModel(WindowModel):
             
             self.cam_data_list.append(img) # TODO
         
-        
-
-
     def update(self):
         self.posx = self.CAM_BOUND_X
         self.posy = self.CAM_BOUND_Y
@@ -236,8 +238,6 @@ class CamBoundModel(WindowModel):
                 break  # Only one image can be clicked at a time
 
 
-
-
 class CamChangeLeftButtonModel(CamBoundModel):
     def __init__(self, width=1200, length=800):
         super().__init__(width, length)  # 부모 클래스인 CamBoundModel 초기화
@@ -274,46 +274,17 @@ class CamChangeRightButtonModel(CamBoundModel):
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
     
 
-class CamImage(WindowModel):
-    def __init__(self, image, width=1200, length=800):
+
+class DataInfoWindowModel(WindowModel):
+    def __init__(self, width=1200, length=800):
         super().__init__(width, length)  # 부모 클래스인 WindowModel 초기화
-        self.image = pygame.image.load(image)
+        self.color = (100, 100, 100)
+        self.font_color = (200, 200, 200)
         self.update()
 
     def update(self):
-        self.image = pygame.transform.scale(self.image, (300, 200))
-        self.posx = self.CAM_BOUND_X
-        self.posy = self.CAM_BOUND_Y
-        self.width = int(self.WINDOW_WIDTH - self.CAM_BOUND_X)
-        self.length = self.CAM_BOUND_LENGTH
-        self.color = config.WHITE
+        self.posx = self.DATA_INFO_X
+        self.posy = self.DATA_INFO_Y
+        self.width = self.DATA_INFO_WIDTH
+        self.length = self.DATA_INFO_LENGTH
 
-        self.center_hor_line_start_pos = (self.GRID_WINDOW_WIDTH, int(self.length/2))
-        self.center_hor_line_end_pos = (self.WINDOW_WIDTH, int(self.length/2))
-
-        self.center_ver_line_start_pos = (self.GRID_WINDOW_WIDTH+int(self.width/2), 0)
-        self.center_ver_line_end_pos = (self.GRID_WINDOW_WIDTH+int(self.width/2), self.length)
-
-class CamDataModel:
-    def __init__(self, image_path):
-        self.image = pygame.image.load(image_path)
-        self.image = pygame.transform.scale(self.image, (300, 200))  # 캠 이미지 크기 조절
-
-
-
-        # fsub = io.BytesIO(image)
-        # img = pygame.image.load(fsub, 'jpg')
-        # img = pygame.surfarray.array3d(img)
-        # if img.shape[-1] == 3:  # 3채널 이미지일 때
-        #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # img = pygame.surfarray.make_surface(img)
-        # img_rect = pygame.Rect(ToolConfig.CAM_POS_X, 0, ToolConfig.CAM_WINDOW_WIDTH, ToolConfig.CAM_WINDOW_LENGTH)
-
-        # # 이미지의 스케일 조정
-        # scaled_img = pygame.transform.scale(img, (img_rect.width, img_rect.height))
-
-        # # 이미지 표시할 영역을 흰색으로 지우기
-        # pygame.draw.rect(self.screen, (255, 255, 255), img_rect)
-
-        # # 메인 화면(self.screen)에 이미지를 블릿
-        # self.screen.blit(scaled_img, img_rect.topleft)

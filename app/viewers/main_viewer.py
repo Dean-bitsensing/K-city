@@ -21,7 +21,7 @@ class MainViewer:
         self.cambound = CamBoundView(self.model.cam_bound_model, self.screen)
         self.cam_left_button = CamChangeLeftButtonView(self.model.cam_change_left_button_model, self.screen)
         self.cam_right_button = CamChangeRightButtonView(self.model.cam_change_right_button_model, self.screen)
-
+        self.data_info_window = DataInfoWindowView(self.model.data_info_window_model,self.screen)
 
     def window_resize(self):
         self.class_init()
@@ -38,9 +38,8 @@ class MainViewer:
         self.model.cam_bound_model.render_cams(self.screen)
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
+        self.data_info_window.draw_data_info_window()
     
-    
-
 
 class GridView:
     def __init__(self, model, screen):
@@ -166,3 +165,13 @@ class MultipleRadarPositionView:
             self.screen.blit(text, text_rect)
             print( radar_posx,  radar_posy)
         print("=============")
+
+
+class DataInfoWindowView:
+    def __init__(self, model, screen):
+        self.screen = screen
+        self.model = model
+    
+    def draw_data_info_window(self):
+        pygame.draw.rect(self.screen, self.model.color, (self.model.posx, self.model.posy, self.model.width, self.model.length),2)
+        

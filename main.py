@@ -25,8 +25,8 @@ def main():
 
     viewer.current_scan = model.min_scan
     viewer.before_scan = viewer.current_scan
+
     while viewer.running:
-        
         screen.fill((0, 0, 0))
         if viewer.current_scan != viewer.before_scan:
             model.parsing(viewer.current_scan)
