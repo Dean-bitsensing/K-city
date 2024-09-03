@@ -15,11 +15,12 @@ class MainModel:
         self.logging_data = []
         for file in files:
             self.logging_data.append(h5py.File(file))
-
+        self.logging_data_num = len(self.logging_data)
+        
     def set_min_max_scan(self): # 여러개의 logging file중 가장 작은 값으로 설정해야함.
         
         self.min_scan = -1
-        self.max_scan = 999999
+        self.max_scan = 99999999999
 
         for file in self.logging_data:
             min = int(file['DATA_INFO']['initScan'][()].item())
@@ -145,13 +146,15 @@ class CamBoundModel(WindowModel):
 
     def cam_list_load(self, image_sets):
         self.cam_data_list = []
+        self.cam_ip_list = []
         for idx in range(len(image_sets)):
             image = image_sets[idx].image
+            ip = image_sets[idx].ip
             fsub = io.BytesIO(image)
             img = pygame.image.load(fsub, 'jpg')
-            
+            self.cam_ip_list.append(ip)
             self.cam_data_list.append(img) # TODO
-        
+
     def update(self):
         self.posx = self.CAM_BOUND_X
         self.posy = self.CAM_BOUND_Y
@@ -168,7 +171,7 @@ class CamBoundModel(WindowModel):
     def get_current_page_cams(self):
         start_idx = self.current_page * self.cams_per_page
         end_idx = start_idx + self.cams_per_page
-        return self.cam_data_list[start_idx:end_idx], list(range(start_idx, end_idx))
+        return self.cam_data_list[start_idx:end_idx], list(range(start_idx, end_idx)), self.cam_ip_list[start_idx:end_idx]
 
     def next_page(self):
         if (self.current_page + 1) * self.cams_per_page < len(self.cam_data_list):
@@ -182,7 +185,7 @@ class CamBoundModel(WindowModel):
         if len(self.cam_data_list) == 0:
             return
         
-        cams, cam_indices = self.get_current_page_cams()
+        cams, cam_indices, ips = self.get_current_page_cams()
         
         positions = [
             (self.posx, self.posy),
@@ -193,31 +196,42 @@ class CamBoundModel(WindowModel):
         
         # Determine which image is zoomed in, if any
         zoomed_image = None
+        
         for i, idx in enumerate(cam_indices):
             if idx >= len(self.cam_data_list):
                 break
             
             if self.zoomed_in[idx]:
-                zoomed_image = (cams[i], (self.posx, self.posy), idx)
+                zoomed_image = (cams[i], (self.posx, self.posy), idx, ips[i])
                 break
         
         if zoomed_image:
             # Render only the zoomed-in image
-            cam, pos, idx = zoomed_image
+            cam, pos, idx, ip = zoomed_image
             image = cam  # cam already contains the loaded image
             image = pygame.transform.scale(image, (self.width, self.length))
+            # 글자 쓰기
+            myFont = pygame.font.SysFont(None, 30) #(글자체, 글자크기) None=기본글자체
+            myText = myFont.render("Cam : " + str(ip), True, (240,10,10), BLACK) #(Text,anti-alias, color)
+            
             screen.blit(image, pos)
+            screen.blit(myText, pos)
         else:
             # Render all images at their normal size
-            for cam, pos in zip(cams, positions):
+            for cam, pos, ip in zip(cams, positions, ips):
                 image = cam  # cam already contains the loaded image
                 image = pygame.transform.scale(image, (int(self.width / 2), int(self.length / 2)))
+                
+                myFont = pygame.font.SysFont(None, 30) #(글자체, 글자크기) None=기본글자체
+                myText = myFont.render("Cam : " + str(ip), True, (240,10,10), BLACK) #(Text,anti-alias, color)
+                
                 screen.blit(image, pos)
+                screen.blit(myText, pos)
 
 
     def handle_image_click(self, mouse_pos):
         # Handle click events for camera images
-        cams, cam_indices = self.get_current_page_cams()
+        cams, cam_indices, ips = self.get_current_page_cams()
         positions = [
             (self.posx, self.posy),
             (self.center_ver_line_start_pos[0], self.posy),
