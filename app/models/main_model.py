@@ -42,8 +42,9 @@ class MainModel:
             ip = file_stem.split('_')[-1]
             self.current_scan_data[idx] = ScanData(file, current_scan)    
             self.current_scan_data[idx].parsing_status()
-            self.current_scan_data[idx].parsing_gps_into_meter()
+            self.current_scan_data[idx].parsing_gps_into_meter(self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
             self.current_scan_data[idx].parsing_image()
+            self.current_scan_data[idx].parsing_vision_object_data()
             self.current_scan_data[idx].ip = ip
             
         if not os.path.exists(BACKGROUND_IMAGE_PATH):
@@ -129,7 +130,7 @@ class GridModel(WindowModel):
     def update(self):
         self.start_posx = 0
         self.end_posx = self.GRID_WINDOW_WIDTH  # WindowModel의 속성 직접 사용
-        self.interval_x = int(config.GRID_X_SIZE * config.SPLITED_SCALE_RATE)
+        self.interval_x = int(config.GRID_X_SIZE )
         self.start_posy = 0
         self.end_posy = self.GRID_WINDOW_LENGTH
         self.interval_y = int(config.GRID_Y_SIZE)

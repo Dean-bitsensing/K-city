@@ -14,7 +14,6 @@ def main():
     model.get_logging_data(logging_datas)
     model.set_min_max_scan()
     
-    
     # View
     viewer = MainViewer(model, screen)
     model.parsing(viewer.current_scan)

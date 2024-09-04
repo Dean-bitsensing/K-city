@@ -75,7 +75,6 @@ class MainController:
         if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
             if True in self.model.cam_bound_model.zoomed_in:
                 self.model.cam_bound_model.previous_zoom()
-                
             else:
                 self.model.cam_bound_model.previous_page()
                 self.model.cam_bound_model.zoom_init()
@@ -83,7 +82,6 @@ class MainController:
         elif self.model.cam_change_right_button_model.is_clicked(mouse_pos):
             if True in self.model.cam_bound_model.zoomed_in:
                 self.model.cam_bound_model.next_zoom()
-                
             else:
                 self.model.cam_bound_model.next_page()
                 self.model.cam_bound_model.zoom_init()
@@ -94,7 +92,7 @@ class MainController:
     def update_config(self, width, length):
         self.model.window_resize(width, length)
         self.viewer.window_resize()
-        self.viewer.window_resize()
+        
 
         
 

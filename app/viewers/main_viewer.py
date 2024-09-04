@@ -33,6 +33,7 @@ class MainViewer:
         self.background_image.draw_background_image()
         self.grid.draw_grid()
         self.radar_postions.draw_radar_positions()
+        self.radar_postions.draw_vision_object()
         # self.cambound.draw_vision_box()/
         self.model.cam_bound_model.cam_list_load(self.model.current_scan_data)
         self.model.cam_bound_model.render_cams(self.screen)
@@ -144,28 +145,29 @@ class MultipleRadarPositionView:
     def __init__(self, model, screen):
         self.model = model
         self.screen = screen
-
+        self.center_x = self.model.window_model.GRID_WINDOW_WIDTH//2
+        self.center_y = self.model.window_model.GRID_WINDOW_LENGTH//2
     def draw_radar_positions(self):
-        center_x = self.model.window_model.GRID_WINDOW_WIDTH//2
-        center_y = self.model.window_model.GRID_WINDOW_LENGTH//2
-
+        pygame.draw.circle(self.screen, BLUE, (self.center_x, self.center_y), 5, 0)
         for data in self.model.current_scan_data:
         #need to consider extending to draw multiple radars
             radar_posx = data.radar_posx
             radar_posy = data.radar_posy
-            pygame.draw.circle(self.screen, RED, (center_x + radar_posx, center_y - radar_posy), 5, 0)
+            pygame.draw.circle(self.screen, RED, (radar_posx, radar_posy), 5, 0)
             font = pygame.font.Font(None, 20)
             text = font.render(data.ip, True, RED)  # 렌더링할 텍스트와 색상
             text_rect = text.get_rect()
 
             # 텍스트 위치 설정 (원 아래)
-            text_rect.center = (center_x + radar_posx, center_y - radar_posy + 10)  # 원 아래로 10 픽셀만큼 떨어뜨림
+            text_rect.center = (radar_posx, radar_posy + 10)  # 원 아래로 10 픽셀만큼 떨어뜨림
 
             # 텍스트 화면에 표시
             self.screen.blit(text, text_rect)
-            # print( radar_posx,  radar_posy)
-        # print("=============")
-
+    
+    def draw_vision_object(self):
+        for data in self.model.current_scan_data:
+            for vobj in data.vision_object_data:
+                pygame.draw.circle(self.screen, GREEN, (self.center_x - vobj.posx, self.center_y - vobj.posy), 2, 0)
 
 class DataInfoWindowView:
     def __init__(self, model, screen):
@@ -174,4 +176,3 @@ class DataInfoWindowView:
     
     def draw_data_info_window(self):
         pygame.draw.rect(self.screen, self.model.color, (self.model.posx, self.model.posy, self.model.width, self.model.length),2)
-        
