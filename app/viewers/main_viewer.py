@@ -163,8 +163,8 @@ class MultipleRadarPositionView:
 
             # 텍스트 화면에 표시
             self.screen.blit(text, text_rect)
-            print( radar_posx,  radar_posy)
-        print("=============")
+            # print( radar_posx,  radar_posy)
+        # print("=============")
 
 
 class DataInfoWindowView:

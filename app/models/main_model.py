@@ -141,7 +141,7 @@ class CamBoundModel(WindowModel):
         self.cam_data_list = []
         self.current_page = 0
         self.cams_per_page = 4
-        self.zoomed_in = [False] * 20
+        self.zoom_init()
         self.update()
 
     def cam_list_load(self, image_sets):
@@ -243,14 +243,63 @@ class CamBoundModel(WindowModel):
             if rect.collidepoint(mouse_pos):
                 
                 if not self.zoomed_in[idx]:
-                    self.zoomed_in = [False] * 20
+                    self.zoom_init()
                     self.zoomed_in[idx] = True
                 
                 else:
                     self.zoomed_in[idx] = False
                     
                 break  # Only one image can be clicked at a time
+    
+    def zoom_init(self):
+        self.zoomed_in = [False] * 20
 
+    def next_zoom(self):
+        # 현재 줌된 카메라의 인덱스를 찾음
+        current_zoom_index = None
+        for i, zoom in enumerate(self.zoomed_in):
+            if zoom:
+                current_zoom_index = i
+                break
+        # 현재 페이지에 마지막 카메라가 줌된 상태이면 페이지 넘기기
+        if current_zoom_index is not None:
+            next_zoom_index = current_zoom_index + 1
+                
+            if next_zoom_index >= len(self.cam_data_list):
+                self.zoom_init()
+            # 현재 페이지의 마지막 카메라를 넘으면 다음 페이지로 이동
+            
+            elif (next_zoom_index % self.cams_per_page) == 0:
+                self.next_page()  # 페이지 넘기기
+                self.zoom_init()  # 줌 초기화
+                self.zoomed_in[next_zoom_index] = True  # 다음 페이지의 첫 번째 카메라를 확대
+            else:
+                # 다음 카메라로 줌 이동
+                self.zoomed_in[current_zoom_index] = False
+                self.zoomed_in[next_zoom_index] = True
+
+    def previous_zoom(self):
+        # 현재 줌된 카메라의 인덱스를 찾음
+        current_zoom_index = None
+        for i, zoom in enumerate(self.zoomed_in):
+            if zoom:
+                current_zoom_index = i
+                break
+
+        # 현재 페이지에서 첫 번째 카메라가 줌된 상태이면 페이지 넘기기
+        if current_zoom_index is not None:
+            previous_zoom_index = current_zoom_index - 1
+
+            # 현재 페이지의 첫 번째 카메라일 경우 이전 페이지로 이동
+            if (previous_zoom_index % self.cams_per_page) == 3:
+                if self.current_page > 0:
+                    self.previous_page()  # 페이지 넘기기
+                    self.zoom_init()  # 줌 초기화
+                    self.zoomed_in[self.cams_per_page - 1] = True  # 이전 페이지의 마지막 카메라를 확대
+            else:
+                # 이전 카메라로 줌 이동
+                self.zoomed_in[current_zoom_index] = False
+                self.zoomed_in[previous_zoom_index] = True
 
 class CamChangeLeftButtonModel(CamBoundModel):
     def __init__(self, width=1200, length=800):
