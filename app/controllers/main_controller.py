@@ -85,7 +85,11 @@ class MainController:
             else:
                 self.model.cam_bound_model.next_page()
                 self.model.cam_bound_model.zoom_init()
+        
+        elif self.model.cam_return_button_model.is_clicked(mouse_pos):
+            self.model.cam_bound_model.zoom_init()
             
+
         else:
             self.model.cam_bound_model.handle_image_click(mouse_pos)
 

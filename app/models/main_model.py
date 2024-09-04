@@ -62,6 +62,7 @@ class MainModel:
         self.cam_bound_model = CamBoundModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH)
         self.cam_change_left_button_model = CamChangeLeftButtonModel()
         self.cam_change_right_button_model = CamChangeRightButtonModel()
+        self.cam_return_button_model = CamReturnButtonModel()
         self.data_info_window_model = DataInfoWindowModel()
         
 
@@ -71,6 +72,7 @@ class MainModel:
         self.cam_bound_model = CamBoundModel(width, length)
         self.cam_change_left_button_model = CamChangeLeftButtonModel(width, length)
         self.cam_change_right_button_model = CamChangeRightButtonModel(width, length)
+        self.cam_return_button_model = CamReturnButtonModel(width, length)
         self.data_info_window_model = DataInfoWindowModel(width, length)
 
     def get_h5_datas(self, directory):
@@ -181,7 +183,8 @@ class CamBoundModel(WindowModel):
     def previous_page(self):
         if self.current_page > 0:
             self.current_page -= 1
-
+    
+    
     def render_cams(self, screen):
         if len(self.cam_data_list) == 0:
             return
@@ -255,6 +258,12 @@ class CamBoundModel(WindowModel):
     def zoom_init(self):
         self.zoomed_in = [False] * 20
 
+    def is_zoom(self):
+        if True in self.zoomed_in:
+            return 1
+        else:
+            return 0
+
     def next_zoom(self):
         # 현재 줌된 카메라의 인덱스를 찾음
         current_zoom_index = None
@@ -302,6 +311,24 @@ class CamBoundModel(WindowModel):
                 self.zoomed_in[current_zoom_index] = False
                 self.zoomed_in[previous_zoom_index] = True
 
+class CamReturnButtonModel(CamBoundModel):
+    def __init__(self, width=1200, length=800):
+        super().__init__(width, length)  # 부모 클래스인 CamBoundModel 초기화
+        self.update()
+
+    def update(self):
+        super().update()  # 부모 클래스의 update() 메서드를 먼저 호출하여 CamBoundModel 속성 업데이트
+        self.button_width = int(self.width / 20)
+        self.button_length = self.button_width
+        self.button_posx = self.WINDOW_WIDTH - self.button_width
+        self.button_posy = self.length - self.button_length
+        
+        self.color = config.WHITE
+        self.outline_color = config.BLACK
+    def is_clicked(self, mouse_pos):
+        return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
+                self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
+    
 class CamChangeLeftButtonModel(CamBoundModel):
     def __init__(self, width=1200, length=800):
         super().__init__(width, length)  # 부모 클래스인 CamBoundModel 초기화

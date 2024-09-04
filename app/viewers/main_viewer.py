@@ -21,6 +21,8 @@ class MainViewer:
         self.cambound = CamBoundView(self.model.cam_bound_model, self.screen)
         self.cam_left_button = CamChangeLeftButtonView(self.model.cam_change_left_button_model, self.screen)
         self.cam_right_button = CamChangeRightButtonView(self.model.cam_change_right_button_model, self.screen)
+        
+        self.cam_return_button = CamReturnButtonView(self.model.cam_return_button_model, self.screen)
         self.data_info_window = DataInfoWindowView(self.model.data_info_window_model,self.screen)
 
     def window_resize(self):
@@ -39,6 +41,8 @@ class MainViewer:
         self.model.cam_bound_model.render_cams(self.screen)
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
+        if self.model.cam_bound_model.is_zoom():
+            self.cam_return_button.draw_return_button()
         self.data_info_window.draw_data_info_window()
     
 
@@ -119,6 +123,24 @@ class CamChangeRightButtonView:
         self.model = model
 
     def draw_vision_next_list_button(self):
+        pygame.draw.rect(
+            self.screen, 
+            self.model.color, 
+            (self.model.button_posx, self.model.button_posy, self.model.button_width, self.model.button_length)   
+        )
+        pygame.draw.rect(
+            self.screen, 
+            self.model.outline_color, 
+            (self.model.button_posx, self.model.button_posy, self.model.button_width, self.model.button_length),
+            2
+        )
+
+class CamReturnButtonView:
+    def __init__(self, model, screen):
+        self.screen = screen
+        self.model = model
+
+    def draw_return_button(self):
         pygame.draw.rect(
             self.screen, 
             self.model.color, 
