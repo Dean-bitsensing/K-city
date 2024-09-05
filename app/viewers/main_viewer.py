@@ -158,24 +158,28 @@ class BackGroundImageView:
         self.model = model
         self.screen = screen
 
+        self.center_x = self.model.GRID_WINDOW_WIDTH//2
+        self.center_y = self.model.GRID_WINDOW_LENGTH//2
+
     def draw_background_image(self):
         background_image = pygame.image.load(BACKGROUND_IMAGE_PATH)
         resized_background_image = pygame.transform.scale(background_image, (self.model.GRID_WINDOW_WIDTH ,self.model.GRID_WINDOW_LENGTH))
         self.screen.blit(resized_background_image, (0, 0))
+        pygame.draw.circle(self.screen, BLUE, (self.center_x, self.center_y), 5, 0)
+
+
         
 class MultipleRadarPositionView:
     def __init__(self, model, screen):
         self.model = model
         self.screen = screen
-        self.center_x = self.model.window_model.GRID_WINDOW_WIDTH//2
-        self.center_y = self.model.window_model.GRID_WINDOW_LENGTH//2
+
     def draw_radar_positions(self):
-        pygame.draw.circle(self.screen, BLUE, (self.center_x, self.center_y), 5, 0)
+        
         for data in self.model.current_scan_data:
-        #need to consider extending to draw multiple radars
             radar_posx = data.radar_posx
             radar_posy = data.radar_posy
-            pygame.draw.circle(self.screen, RED, (radar_posx, radar_posy), 5, 0)
+            pygame.draw.circle(self.screen, data.color, (radar_posx, radar_posy), 5, 0)
             font = pygame.font.Font(None, 20)
             text = font.render(data.ip, True, RED)  # 렌더링할 텍스트와 색상
             text_rect = text.get_rect()
@@ -186,10 +190,10 @@ class MultipleRadarPositionView:
             # 텍스트 화면에 표시
             self.screen.blit(text, text_rect)
     
-    def draw_vision_object(self):
+    def draw_vision_object(self): # TODO width, length 추가해서 그리기
         for data in self.model.current_scan_data:
             for vobj in data.vision_object_data:
-                pygame.draw.circle(self.screen, GREEN, (self.center_x - vobj.posx, self.center_y - vobj.posy), 2, 0)
+                pygame.draw.circle(self.screen, data.color, (vobj.posx, vobj.posy), 2, 0)
 
 class DataInfoWindowView:
     def __init__(self, model, screen):

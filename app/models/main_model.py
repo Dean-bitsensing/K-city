@@ -34,8 +34,8 @@ class MainModel:
             
 
     def parsing(self,current_scan):
-        self.current_scan_data = [0] * len(self.logging_data)
-        
+        self.current_scan_data = [0] * self.logging_data_num
+        color_set = (BLUE, GREEN, RED, YELLOW) # TODO color 추가해줘야함. 맵에서 잘 보이는거 위주로 추가하기
         for idx, file in enumerate(self.logging_data):
             file_path = Path(file.filename)
             file_stem = file_path.stem 
@@ -46,10 +46,13 @@ class MainModel:
             self.current_scan_data[idx].parsing_image()
             self.current_scan_data[idx].parsing_vision_object_data()
             self.current_scan_data[idx].ip = ip
+            self.current_scan_data[idx].color = color_set[idx]
             
         if not os.path.exists(BACKGROUND_IMAGE_PATH):
             parsing_image_data_from_google()
     
+
+
     def intersection_fusion(self):
         pass
 
@@ -64,6 +67,7 @@ class MainModel:
         self.cam_change_right_button_model = CamChangeRightButtonModel()
         self.cam_return_button_model = CamReturnButtonModel()
         self.data_info_window_model = DataInfoWindowModel()
+        
         
 
     def window_resize(self, width, length):
@@ -97,6 +101,7 @@ class WindowModel(Observable):
         super().__init__()
         self.WINDOW_WIDTH = width
         self.WINDOW_LENGTH = length
+        
         self.update_sizes()
 
     def update_sizes(self):
@@ -104,7 +109,7 @@ class WindowModel(Observable):
         self.GRID_WINDOW_LENGTH         = int(self.WINDOW_LENGTH * 9 / 10)
         self.HALF_GRID_WINDOW_WIDTH     = int(self.GRID_WINDOW_WIDTH // 2)
         self.HALF_GRID_WINDOW_LENGTH    = int(self.GRID_WINDOW_LENGTH // 2)
-
+        
         self.CAM_BOUND_X        = int(self.GRID_WINDOW_WIDTH)
         self.CAM_BOUND_Y        = 0
         self.CAM_BOUND_WIDTH    = int(self.WINDOW_WIDTH - self.GRID_WINDOW_WIDTH)
@@ -364,6 +369,7 @@ class CamChangeRightButtonModel(CamBoundModel):
         return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
     
+
 
 
 class DataInfoWindowModel(WindowModel):
