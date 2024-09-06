@@ -221,6 +221,7 @@ class CamBoundModel(WindowModel):
         self.cam_data_list = []
         self.current_page = 0
         self.cams_per_page = 4
+        self.cam_bbox_mode = 1
         self.zoom_init()
         self.update()
 
@@ -266,7 +267,7 @@ class CamBoundModel(WindowModel):
             self.current_page -= 1
     
     
-    def render_cams(self, screen):
+    def render_cams(self, screen, current_scan_data):
         if len(self.cam_data_list) == 0:
             return
         
@@ -280,19 +281,19 @@ class CamBoundModel(WindowModel):
         ]
         
         # Determine which image is zoomed in, if any
-        zoomed_image = None
+        self.zoomed_image = None
         
         for i, idx in enumerate(cam_indices):
             if idx >= len(self.cam_data_list):
                 break
             
             if self.zoomed_in[idx]:
-                zoomed_image = (cams[i], (self.posx, self.posy), idx, ips[i], colors[i])
+                self.zoomed_image = (cams[i], (self.posx, self.posy), idx, ips[i], colors[i])
                 break
         
-        if zoomed_image:
+        if self.zoomed_image:
             # Render only the zoomed-in image
-            cam, pos, idx, ip, color = zoomed_image
+            cam, pos, idx, ip, color = self.zoomed_image
             image = cam  # cam already contains the loaded image
             image = pygame.transform.scale(image, (self.width, self.length))
             # 글자 쓰기
@@ -303,9 +304,10 @@ class CamBoundModel(WindowModel):
             screen.blit(image, pos)
             pygame.draw.rect(screen, color, rect, 2)
             screen.blit(myText, pos)
+            self.render_bbox(screen, current_scan_data[idx].vision_object_data, idx, (self.width, self.length), pos)
         else:
             # Render all images at their normal size
-            for cam, pos, ip, color in zip(cams, positions, ips, colors):
+            for cam, pos, ip, color, idx in zip(cams, positions, ips, colors, cam_indices):
                 image = cam  # cam already contains the loaded image
                 image = pygame.transform.scale(image, (int(self.width / 2), int(self.length / 2)))
                 
@@ -316,6 +318,35 @@ class CamBoundModel(WindowModel):
                 screen.blit(image, pos)
                 pygame.draw.rect(screen, color, rect, 2)
                 screen.blit(myText, pos)
+                self.render_bbox(screen, current_scan_data[idx].vision_object_data, idx, (self.width/2, self.length/2), pos)
+
+    def render_bbox(self, screen, vision_object_data, idicies, image_size, cam_position):
+        origin_size = (1024, 576)
+        
+        width_scale = image_size[0]/origin_size[0]
+        length_scale = image_size[1]/origin_size[1]
+
+        
+
+        for vobj in vision_object_data:
+            bbox_posx = vobj.bbox_posx
+            bbox_posy = vobj.bbox_posy
+            bbox_width = vobj.bbox_width
+            bbox_length = vobj.bbox_length
+
+            bbox_posx = int(width_scale * bbox_posx) + cam_position[0]
+            bbox_posy = int(length_scale * bbox_posy) + cam_position[1]
+            bbox_width = int(width_scale * bbox_width)
+            bbox_length = int(width_scale * bbox_length)
+
+            rect = pygame.Rect(bbox_posx, bbox_posy, bbox_width, bbox_length)
+            pygame.draw.rect(screen, YELLOW, rect, 2)
+
+
+
+
+
+        pass
 
 
     def handle_image_click(self, mouse_pos):

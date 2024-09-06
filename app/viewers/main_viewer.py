@@ -38,7 +38,7 @@ class MainViewer:
         self.radar_postions.draw_vision_object()
         # self.cambound.draw_vision_box()/
         self.model.cam_bound_model.cam_list_load(self.model.current_scan_data)
-        self.model.cam_bound_model.render_cams(self.screen)
+        self.model.cam_bound_model.render_cams(self.screen, self.model.current_scan_data)
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
         if self.model.cam_bound_model.is_zoom():
@@ -98,6 +98,9 @@ class CamBoundView:
         pygame.draw.rect(self.screen, self.model.color, (self.model.posx, self.model.posy, self.model.width, self.model.length),2)
         pygame.draw.line(self.screen, self.model.color, self.model.center_hor_line_start_pos, self.model.center_hor_line_end_pos, 2)
         pygame.draw.line(self.screen, self.model.color, self.model.center_ver_line_start_pos, self.model.center_ver_line_end_pos, 2)
+
+    def draw_bbox(self):
+        pass
 
 class CamChangeLeftButtonView:
     def __init__(self, model, screen):
@@ -206,6 +209,9 @@ class MultipleRadarPositionView:
                     vobj.dr_pos,
                 ]
                 pygame.draw.polygon(self.screen, data.color, polygon_pos, 2)
+
+    
+
 
 
 class DataInfoWindowView:

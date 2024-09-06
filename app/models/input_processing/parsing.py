@@ -22,6 +22,11 @@ class VisionObj:
         self.width = 0
         self.length = 0
 
+        self.bbox_posx = 0
+        self.bbox_posy = 0
+        self.bbox_width = 0
+        self.bbox_length = 0
+
         self.velx = 0
         self.vely = 0
 
@@ -173,6 +178,11 @@ class ScanData:
         
         for vobj in self.scan_data['Vision_object'][:]:
             new_vobj = VisionObj()
+
+            new_vobj.bbox_posx   = vobj[3]
+            new_vobj.bbox_posy   = vobj[4]
+            new_vobj.bbox_width  = vobj[5]
+            new_vobj.bbox_length = vobj[6]
 
             posx = vobj[11]
             posy = vobj[12]
