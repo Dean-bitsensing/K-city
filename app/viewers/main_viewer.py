@@ -44,6 +44,7 @@ class MainViewer:
         if self.model.cam_bound_model.is_zoom():
             self.cam_return_button.draw_return_button()
         self.data_info_window.draw_data_info_window()
+        # self.model.object_matching()
     
 
 class GridView:
@@ -191,9 +192,21 @@ class MultipleRadarPositionView:
             self.screen.blit(text, text_rect)
     
     def draw_vision_object(self): # TODO width, length 추가해서 그리기
+        
         for data in self.model.current_scan_data:
             for vobj in data.vision_object_data:
                 pygame.draw.circle(self.screen, data.color, (vobj.posx, vobj.posy), 2, 0)
+                pygame.draw.line(self.screen, BLACK, (vobj.posx, vobj.posy), (vobj.velx + vobj.posx, vobj.vely + vobj.posy), 1)
+                # pygame.draw.circle(self.screen, RED, (vobj.velx, vobj.vely), 2, 0)
+                polygon_pos = [
+                    vobj.dl_pos,
+                    
+                    vobj.ul_pos,
+                    vobj.ur_pos,
+                    vobj.dr_pos,
+                ]
+                pygame.draw.polygon(self.screen, data.color, polygon_pos, 2)
+
 
 class DataInfoWindowView:
     def __init__(self, model, screen):

@@ -13,8 +13,15 @@ class VisionObj:
     def __init__(self):
         self.posx = 0 
         self.posy = 0
+
+        self.ul_pos = [0, 0]
+        self.ur_pos = [0, 0]
+        self.dl_pos = [0, 0]
+        self.dr_pos = [0, 0]
+
         self.width = 0
         self.length = 0
+
         self.velx = 0
         self.vely = 0
 
@@ -154,33 +161,80 @@ class ScanData:
 
             return pixels_on_window
         
+        def tf(pos, transition_matrix, transition_matrix2):
+            
+            position = np.array([[pos[0]],[pos[1]],[1]])
+            position = np.dot(transition_matrix,position)
+            position = np.dot(transition_matrix2, position)
+            pos[0] = position[0][0]
+            pos[1] = position[1][0]
+
+            return pos
+        
         for vobj in self.scan_data['Vision_object'][:]:
             new_vobj = VisionObj()
 
             posx = vobj[11]
             posy = vobj[12]
             posx = -posx
+
+            width = vobj[15]
+            length = vobj[16]
+
+            ul_pos = [int(posx - length/2), int(posy - width/2)]
+            ur_pos = [int(posx - length/2), int(posy + width/2)]
+            dl_pos = [int(posx + length/2), int(posy - width/2)]
+            dr_pos = [int(posx + length/2), int(posy + width/2)]
+
             velx = vobj[13]
             vely = vobj[14]
             velx = -velx
-
-
+            print(vobj[17])
             posx = meters_to_pixels(posx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
             posy = meters_to_pixels(posy, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            
+            ul_pos[0] = meters_to_pixels(ul_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[1] = meters_to_pixels(ul_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+            ur_pos[0] = meters_to_pixels(ur_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[1] = meters_to_pixels(ur_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[0] = meters_to_pixels(dl_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[1] = meters_to_pixels(dl_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[0] = meters_to_pixels(dr_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[1] = meters_to_pixels(dr_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+            ul_pos = tf(ul_pos, transition_matrix, transition_matrix2)
+            ur_pos = tf(ur_pos, transition_matrix, transition_matrix2)
+            dl_pos = tf(dl_pos, transition_matrix, transition_matrix2)
+            dr_pos = tf(dr_pos, transition_matrix, transition_matrix2)
+
+
+            velx = meters_to_pixels(velx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            vely = meters_to_pixels(vely, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
             
             position = np.array([[posx],[posy],[1]])
             position = np.dot(transition_matrix,position)
             position = np.dot(transition_matrix2, position)
             posx = position[0][0]
             posy = position[1][0]
-            
+
+            velocity = np.array([[velx],[vely],[1]])
+            velocity = np.dot(transition_matrix,velocity)
+            velocity = np.dot(transition_matrix2, velocity)
+            velx = velocity[0][0]
+            vely = velocity[1][0]
+
             new_vobj.posx = posx
             new_vobj.posy = posy
             new_vobj.width = vobj[15] # TODO 수정해야함
             new_vobj.length = vobj[16]
-            new_vobj.velx = velx
-            new_vobj.vely = vely
+            new_vobj.velx = velx - self.radar_posx
+            new_vobj.vely = vely - self.radar_posy
 
+            new_vobj.ul_pos = ul_pos
+            new_vobj.ur_pos = ur_pos
+            new_vobj.dl_pos = dl_pos
+            new_vobj.dr_pos = dr_pos
 
             self.vision_object_data.append(new_vobj)
 

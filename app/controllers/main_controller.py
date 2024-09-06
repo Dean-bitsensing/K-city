@@ -70,6 +70,9 @@ class MainController:
         elif event.key == pygame.K_SPACE:
             self.viewer.paused = not self.viewer.paused
 
+        elif event.key == pygame.K_0:
+            self.model.object_matching()
+
     def handle_mouse_click(self, mouse_pos):
         # Check if left or right buttons are clicked
         if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
