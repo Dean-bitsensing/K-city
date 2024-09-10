@@ -13,10 +13,12 @@ def main(config):
     logging_datas = model.get_h5_datas(KCITY_FOLDER_PATH)
     model.get_logging_data(logging_datas)
     model.set_min_max_scan()
-    
+    model.grid_model.parsing_map()
     # View
+    
     viewer = MainViewer(model, screen)
     model.parsing(viewer.current_scan)
+    
     # Controller
     event_controller = MainController(model, viewer)
  

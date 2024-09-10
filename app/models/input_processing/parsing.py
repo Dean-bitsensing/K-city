@@ -199,7 +199,7 @@ class ScanData:
             velx = vobj[13]
             vely = vobj[14]
             velx = -velx
-            print(vobj[17])
+            
             posx = meters_to_pixels(posx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
             posy = meters_to_pixels(posy, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
             
@@ -248,8 +248,8 @@ class ScanData:
 
             self.vision_object_data.append(new_vobj)
 
-def parsing_image_data_from_google():
-    map_url = get_static_map_url(LAT_LANDMARK, LON_LANDMARK)
+def parsing_image_data_from_google(center_lat, center_lng, grid_width, grid_height, zoom, maptype, image_path):
+    map_url = get_static_map_url(center_lat, center_lng, grid_width, grid_height, zoom, maptype)
 
     # 지도 이미지 가져오기
     try:
@@ -265,11 +265,11 @@ def parsing_image_data_from_google():
             # 이미지를 BytesIO로 읽고, Pillow 이미지로 열기
             map_image = Image.open(BytesIO(response.content))
                 
-            if not os.path.exists('images'):
-                os.makedirs('images')
+            # if not os.path.exists('app'):
+            #     os.makedirs('images')
             # PNG 파일로 저장
-            if not os.path.exists('./images/map_image.png'):
-                map_image.save('./images/map_image.png', 'PNG')
+            if not os.path.exists(image_path):
+                map_image.save(image_path, 'PNG')
                 print("Image saved as 'map_image.png'")
             
         except Exception as e:
@@ -282,8 +282,8 @@ def parsing_image_data_from_google():
         
          
 
-def get_static_map_url(lat, lng, width = GRID_WINDOW_WIDTH, height = GRID_WINDOW_LENGTH, zoom=18, maptype='satellite'):
-    return f"https://maps.googleapis.com/maps/api/staticmap?center={lat},{lng}&zoom={zoom}&size={width}x{height}&maptype={maptype}&key={API_KEY}"
+def get_static_map_url(center_lat, center_lng, width, height, zoom=18, maptype='satellite'):
+    return f"https://maps.googleapis.com/maps/api/staticmap?center={center_lat},{center_lng}&zoom={zoom}&size={width}x{height}&maptype={maptype}&key={API_KEY}"
 
 def fetch_map_image(url):
     response = requests.get(url)
