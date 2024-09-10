@@ -1,5 +1,5 @@
 import pygame
-from config import *
+
 
 class MainViewer:
     def __init__(self, model, screen):
@@ -55,29 +55,29 @@ class GridView:
 
     def draw_grid(self):
         
-        font = pygame.font.SysFont("arial", FONT_SIZE, True, False)
+        font = pygame.font.SysFont("arial", self.model.font_size, True, False)
 
         center_x = (self.model.start_posx + self.model.end_posx)//2
         center_y = (self.model.start_posy + self.model.end_posy)//2
 
         for x in range(center_x, self.model.end_posx, self.model.interval_x):
             pygame.draw.line(self.screen, self.model.color, (x, 0), (x, self.model.GRID_WINDOW_LENGTH))
-            label = font.render(str(int(x//SPLITED_SCALE_RATE_X))+"m", True, self.model.font_color)
-            self.screen.blit(label, (x, self.model.GRID_WINDOW_LENGTH - GRID_X_SIZE))
+            label = font.render(str(int(x//self.model.SPLITED_SCALE_RATE_X))+"m", True, self.model.font_color)
+            self.screen.blit(label, (x, self.model.GRID_WINDOW_LENGTH - self.model.GRID_X_SIZE))
 
         for x in range(center_x, self.model.start_posx, - self.model.interval_x):
             pygame.draw.line(self.screen, self.model.color, (x, 0), (x, self.model.GRID_WINDOW_LENGTH))
-            label = font.render(str(int(x//SPLITED_SCALE_RATE_X))+"m", True, self.model.font_color)
-            self.screen.blit(label, (x, self.model.GRID_WINDOW_LENGTH - GRID_X_SIZE))
+            label = font.render(str(int(x//self.model.SPLITED_SCALE_RATE_X))+"m", True, self.model.font_color)
+            self.screen.blit(label, (x, self.model.GRID_WINDOW_LENGTH - self.model.GRID_X_SIZE))
 
         for y in range(center_y, self.model.end_posy, self.model.interval_y):
             pygame.draw.line(self.screen, self.model.color, (0, y), (self.model.GRID_WINDOW_WIDTH, y))
-            label = font.render(str(y//SCALED_RATE_Y)+"m", True, self.model.font_color)
+            label = font.render(str(y//self.model.SCALED_RATE_Y)+"m", True, self.model.font_color)
             self.screen.blit(label, (0, y))
 
         for y in range(center_y, self.model.start_posy, -self.model.interval_y):
             pygame.draw.line(self.screen, self.model.color, (0, y), (self.model.GRID_WINDOW_WIDTH, y))
-            label = font.render(str(y//SCALED_RATE_Y)+"m", True, self.model.font_color)
+            label = font.render(str(y//self.model.SCALED_RATE_Y)+"m", True, self.model.font_color)
             self.screen.blit(label, (0, y))
         # for y in range(center_y, 0, -ToolConfig.GRID_Y_SIZE):
         #     pygame.draw.line(self.screen, grid_color, (0, y), (ToolConfig.GRID_WINDOW_WIDTH, y))
@@ -166,10 +166,11 @@ class BackGroundImageView:
         self.center_y = self.model.GRID_WINDOW_LENGTH//2
 
     def draw_background_image(self):
-        background_image = pygame.image.load(BACKGROUND_IMAGE_PATH)
-        resized_background_image = pygame.transform.scale(background_image, (self.model.GRID_WINDOW_WIDTH ,self.model.GRID_WINDOW_LENGTH))
-        self.screen.blit(resized_background_image, (0, 0))
-        pygame.draw.circle(self.screen, BLUE, (self.center_x, self.center_y), 5, 0)
+        # TODO 아래 주석 해제
+        # background_image = pygame.image.load(self.model.BACKGROUND_IMAGE_PATH)
+        # resized_background_image = pygame.transform.scale(background_image, (self.model.GRID_WINDOW_WIDTH ,self.model.GRID_WINDOW_LENGTH))
+        # self.screen.blit(resized_background_image, (0, 0))
+        pygame.draw.circle(self.screen, self.model.center_point_color, (self.center_x, self.center_y), 5, 0)
 
 
         
@@ -185,7 +186,7 @@ class MultipleRadarPositionView:
             radar_posy = data.radar_posy
             pygame.draw.circle(self.screen, data.color, (radar_posx, radar_posy), 5, 0)
             font = pygame.font.Font(None, 20)
-            text = font.render(data.ip, True, RED)  # 렌더링할 텍스트와 색상
+            text = font.render(data.ip, True, self.model.cam_bound_model.cam_ip_box_color)  # 렌더링할 텍스트와 색상
             text_rect = text.get_rect()
 
             # 텍스트 위치 설정 (원 아래)
@@ -194,12 +195,12 @@ class MultipleRadarPositionView:
             # 텍스트 화면에 표시
             self.screen.blit(text, text_rect)
     
-    def draw_vision_object(self): # TODO width, length 추가해서 그리기
+    def draw_vision_object(self):
         
         for data in self.model.current_scan_data:
             for vobj in data.vision_object_data:
                 pygame.draw.circle(self.screen, data.color, (vobj.posx, vobj.posy), 2, 0)
-                pygame.draw.line(self.screen, BLACK, (vobj.posx, vobj.posy), (vobj.velx + vobj.posx, vobj.vely + vobj.posy), 1)
+                pygame.draw.line(self.screen, data.speed_color, (vobj.posx, vobj.posy), (vobj.velx + vobj.posx, vobj.vely + vobj.posy), 1)
                 # pygame.draw.circle(self.screen, RED, (vobj.velx, vobj.vely), 2, 0)
                 polygon_pos = [
                     vobj.dl_pos,
@@ -211,9 +212,6 @@ class MultipleRadarPositionView:
                 pygame.draw.polygon(self.screen, data.color, polygon_pos, 2)
 
     
-
-
-
 class DataInfoWindowView:
     def __init__(self, model, screen):
         self.screen = screen

@@ -38,7 +38,7 @@ class ScanData:
         self.scan_data = h5_dataset['SCAN_{:05d}'.format(current_scan)]
         self.ip = 'ip'
         self.intersection_number = 1
-        self.color = BLACK
+        self.color = None
 
 
     def parsing_status(self):

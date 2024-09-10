@@ -32,8 +32,9 @@ def main():
             model.parsing(viewer.current_scan)
         viewer.draw()
         pygame.display.flip() # 화면 업데이트
+        # pygame.display.update()
 
-        clock.tick(FPS)  # Limit frame rate to 60 FPS
+        clock.tick(FPS) 
         
         if not viewer.paused:
             viewer.current_scan += 1

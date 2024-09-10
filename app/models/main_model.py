@@ -1,5 +1,5 @@
 import h5py
-import config 
+from .colors import *
 from .input_processing import *
 import pygame
 import io, os
@@ -37,7 +37,7 @@ class MainModel:
 
     def parsing(self,current_scan):
         self.current_scan_data = [0] * self.logging_data_num
-        color_set = (BLUE, GREEN, RED, YELLOW) # TODO color 추가해줘야함. 맵에서 잘 보이는거 위주로 추가하기
+        color_set = (BLUE, GREEN, RED, YELLOW,BLUE, GREEN, RED, YELLOW) # TODO color 추가해줘야함. 맵에서 잘 보이는거 위주로 추가하기
         for idx, file in enumerate(self.logging_data):
             file_path = Path(file.filename)
             file_stem = file_path.stem 
@@ -49,12 +49,11 @@ class MainModel:
             self.current_scan_data[idx].parsing_vision_object_data()
             self.current_scan_data[idx].ip = ip
             self.current_scan_data[idx].color = color_set[idx]
+            self.current_scan_data[idx].speed_color = BLACK
             
         if not os.path.exists(BACKGROUND_IMAGE_PATH):
             parsing_image_data_from_google()
     
-
-
     def intersection_fusion(self):
         pass
 
@@ -173,6 +172,15 @@ class WindowModel(Observable):
         super().__init__()
         self.WINDOW_WIDTH = width
         self.WINDOW_LENGTH = length
+
+        self.SCALED_RATE_X = 5
+        self.SCALED_RATE_Y = 5
+
+        self.GRID_X_SIZE =  8*self.SCALED_RATE_X
+        self.GRID_Y_SIZE = 10*self.SCALED_RATE_Y
+
+        self.SPLITED_SCALE_RATE = 0.75
+        self.SPLITED_SCALE_RATE_X = self.SCALED_RATE_X*self.SPLITED_SCALE_RATE
         
         self.update_sizes()
 
@@ -192,6 +200,8 @@ class WindowModel(Observable):
         self.DATA_INFO_WIDTH    = int(self.WINDOW_WIDTH - self.GRID_WINDOW_WIDTH)
         self.DATA_INFO_LENGTH   = int(self.DATA_INFO_WIDTH/2)
 
+        
+
         self.notify_observers()  # Notify observers when sizes are updated
 
     def update(self, width, length):
@@ -204,15 +214,19 @@ class GridModel(WindowModel):
         super().__init__(width, length)  # 부모 클래스인 WindowModel 초기화
         self.color = (0, 0, 0)
         self.font_color = (0, 0, 0)
+        self.font_size = 10
+        self.center_point_color = RED
+        self.BACKGROUND_IMAGE_PATH = 1 # TODO map path 가져오기
+        
         self.update()
 
     def update(self):
         self.start_posx = 0
         self.end_posx = self.GRID_WINDOW_WIDTH  # WindowModel의 속성 직접 사용
-        self.interval_x = int(config.GRID_X_SIZE )
+        self.interval_x = int(self.GRID_X_SIZE )
         self.start_posy = 0
         self.end_posy = self.GRID_WINDOW_LENGTH
-        self.interval_y = int(config.GRID_Y_SIZE)
+        self.interval_y = int(self.GRID_Y_SIZE)
 
 
 class CamBoundModel(WindowModel):
@@ -222,6 +236,7 @@ class CamBoundModel(WindowModel):
         self.current_page = 0
         self.cams_per_page = 4
         self.cam_bbox_mode = 1
+        self.cam_ip_box_color = RED
         self.zoom_init()
         self.update()
 
@@ -237,7 +252,7 @@ class CamBoundModel(WindowModel):
             fsub = io.BytesIO(image)
             img = pygame.image.load(fsub, 'jpg')
             self.cam_ip_list.append(ip)
-            self.cam_data_list.append(img) # TODO
+            self.cam_data_list.append(img)
             self.cam_color.append(color)
 
     def update(self):
@@ -245,7 +260,7 @@ class CamBoundModel(WindowModel):
         self.posy = self.CAM_BOUND_Y
         self.width = int(self.WINDOW_WIDTH - self.CAM_BOUND_X)
         self.length = self.CAM_BOUND_LENGTH
-        self.color = config.WHITE
+        self.color = WHITE
 
         self.center_hor_line_start_pos = (self.GRID_WINDOW_WIDTH, int(self.length / 2))
         self.center_hor_line_end_pos = (self.WINDOW_WIDTH, int(self.length / 2))
@@ -439,8 +454,8 @@ class CamReturnButtonModel(CamBoundModel):
         self.button_posx = self.WINDOW_WIDTH - self.button_width
         self.button_posy = self.length - self.button_length
         
-        self.color = config.WHITE
-        self.outline_color = config.BLACK
+        self.color = WHITE
+        self.outline_color = BLACK
     def is_clicked(self, mouse_pos):
         return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
@@ -456,8 +471,8 @@ class CamChangeLeftButtonModel(CamBoundModel):
         self.button_posy = self.center_hor_line_start_pos[1] - int(self.length / 8)
         self.button_width = int(self.width / 30)
         self.button_length = 2 * int(self.length / 8)
-        self.color = config.WHITE
-        self.outline_color = config.BLACK
+        self.color = WHITE
+        self.outline_color = BLACK
     def is_clicked(self, mouse_pos):
         return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
@@ -474,8 +489,8 @@ class CamChangeRightButtonModel(CamBoundModel):
         self.button_posy = self.center_hor_line_start_pos[1] - int(self.length / 8)
         self.button_width = int(self.width / 30)
         self.button_length = 2 * int(self.length / 8)
-        self.color = config.WHITE
-        self.outline_color = config.BLACK
+        self.color = WHITE
+        self.outline_color = BLACK
     def  is_clicked(self, mouse_pos):
         return (self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
                 self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length)
