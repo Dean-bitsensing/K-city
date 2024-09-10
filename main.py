@@ -1,9 +1,9 @@
 import pygame
 from app import *
 from config import *
+import yaml
 
-
-def main():
+def main(config):
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
@@ -47,5 +47,14 @@ def main():
         
     pygame.quit()
 
+def load_config():
+    # YAML 파일 로드
+    with open('config.yaml', 'r') as file:
+        config = yaml.safe_load(file)
+
+    return config
+
 if __name__ == "__main__":
-    main()
+    # YAML 파일 로드
+    config = load_config()
+    main(config)
