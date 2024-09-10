@@ -34,13 +34,14 @@ class MainModel:
             if max < self.max_scan:
                 self.max_scan = max
             
+    
 
     def parsing(self,current_scan):
         self.current_scan_data = [0] * self.logging_data_num
         color_set = (BLUE, GREEN, RED, YELLOW,BLUE, GREEN, RED, YELLOW) # TODO color 추가해줘야함. 맵에서 잘 보이는거 위주로 추가하기
         for idx, file in enumerate(self.logging_data):
             file_path = Path(file.filename)
-            file_stem = file_path.stem 
+            file_stem = file_path.stem
             ip = file_stem.split('_')[-1]
             self.current_scan_data[idx] = ScanData(file, current_scan)    
             self.current_scan_data[idx].parsing_status()
@@ -51,9 +52,10 @@ class MainModel:
             self.current_scan_data[idx].color = color_set[idx]
             self.current_scan_data[idx].speed_color = BLACK
             
-        if not os.path.exists(BACKGROUND_IMAGE_PATH):
-            parsing_image_data_from_google()
-    
+        # if not os.path.exists(BACKGROUND_IMAGE_PATH):
+        #     parsing_image_data_from_google(LAT_LANDMARK, LON_LANDMARK, self.window_model.GRID_WINDOW_WIDTH, self.window_model.GRID_WINDOW_LENGTH,zoom = 18, maptype = 'satellite')
+        # self.BACKGROUND_IMAGE_PATH = 'images/map_image.png'
+
     def intersection_fusion(self):
         pass
 
@@ -152,7 +154,7 @@ class MainModel:
         # # 각도 계산
         angles = calculate_angles(sensor_positions, matched_detections)
 
-        print('matched : ', matched_detections)
+        # print('matched : ', matched_detections)
         # print('angles : ', angles)
 
 class Observable:
@@ -216,7 +218,7 @@ class GridModel(WindowModel):
         self.font_color = (0, 0, 0)
         self.font_size = 10
         self.center_point_color = RED
-        self.BACKGROUND_IMAGE_PATH = 1 # TODO map path 가져오기
+        self.BACKGROUND_IMAGE_PATH = 'app/resources/map_image.png'
         
         self.update()
 
@@ -228,6 +230,10 @@ class GridModel(WindowModel):
         self.end_posy = self.GRID_WINDOW_LENGTH
         self.interval_y = int(self.GRID_Y_SIZE)
 
+    def parsing_map(self):
+        # self.BACKGROUND_IMAGE_PATH = 'app/resources/map_image.png'
+        if not os.path.exists(self.BACKGROUND_IMAGE_PATH):
+            parsing_image_data_from_google(LAT_LANDMARK, LON_LANDMARK, self.window_model.GRID_WINDOW_WIDTH, self.window_model.GRID_WINDOW_LENGTH,zoom = 18, maptype = 'satellite', image_path=self.BACKGROUND_IMAGE_PATH)
 
 class CamBoundModel(WindowModel):
     def __init__(self, width=1200, length=800):

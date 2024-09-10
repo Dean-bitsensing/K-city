@@ -165,11 +165,10 @@ class BackGroundImageView:
         self.center_x = self.model.GRID_WINDOW_WIDTH//2
         self.center_y = self.model.GRID_WINDOW_LENGTH//2
 
-    def draw_background_image(self):
-        # TODO 아래 주석 해제
-        # background_image = pygame.image.load(self.model.BACKGROUND_IMAGE_PATH)
-        # resized_background_image = pygame.transform.scale(background_image, (self.model.GRID_WINDOW_WIDTH ,self.model.GRID_WINDOW_LENGTH))
-        # self.screen.blit(resized_background_image, (0, 0))
+    def draw_background_image(self):        
+        background_image = pygame.image.load(self.model.BACKGROUND_IMAGE_PATH)
+        resized_background_image = pygame.transform.scale(background_image, (self.model.GRID_WINDOW_WIDTH ,self.model.GRID_WINDOW_LENGTH))
+        self.screen.blit(resized_background_image, (0, 0))
         pygame.draw.circle(self.screen, self.model.center_point_color, (self.center_x, self.center_y), 5, 0)
 
 
