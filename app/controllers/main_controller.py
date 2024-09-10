@@ -70,31 +70,36 @@ class MainController:
         elif event.key == pygame.K_SPACE:
             self.viewer.paused = not self.viewer.paused
 
+        elif event.key == pygame.K_0:
+            self.model.object_matching()
+
     def handle_mouse_click(self, mouse_pos):
         # Check if left or right buttons are clicked
         if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
             if True in self.model.cam_bound_model.zoomed_in:
-                #다른기능
-                pass
+                self.model.cam_bound_model.previous_zoom()
             else:
                 self.model.cam_bound_model.previous_page()
-                self.model.cam_bound_model.zoomed_in = [False] * 20
+                self.model.cam_bound_model.zoom_init()
             
         elif self.model.cam_change_right_button_model.is_clicked(mouse_pos):
             if True in self.model.cam_bound_model.zoomed_in:
-                #다른기능
-                pass
+                self.model.cam_bound_model.next_zoom()
             else:
                 self.model.cam_bound_model.next_page()
-                self.model.cam_bound_model.zoomed_in = [False] * 20
+                self.model.cam_bound_model.zoom_init()
+        
+        elif self.model.cam_return_button_model.is_clicked(mouse_pos):
+            self.model.cam_bound_model.zoom_init()
             
+
         else:
             self.model.cam_bound_model.handle_image_click(mouse_pos)
 
     def update_config(self, width, length):
         self.model.window_resize(width, length)
         self.viewer.window_resize()
-        self.viewer.window_resize()
+        
 
         
 
