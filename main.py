@@ -3,22 +3,27 @@ from app import *
 from config import *
 import yaml
 
-def main(config):
+def load_config():
+    # YAML 파일 로드
+    with open('config.yaml', 'r') as file:
+        config = yaml.safe_load(file)
+
+    return config
+
+def run_pygame(config):
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
 
     # Model
     model = MainModel()
-    logging_datas = model.get_h5_datas(KCITY_FOLDER_PATH)
+    logging_datas = model.get_h5_datas(config)
     model.get_logging_data(logging_datas)
     model.set_min_max_scan()
-    model.grid_model.parsing_map()
-    # View
     
+    # View
     viewer = MainViewer(model, screen)
     model.parsing(viewer.current_scan)
-    
     # Controller
     event_controller = MainController(model, viewer)
  
@@ -49,13 +54,9 @@ def main(config):
         
     pygame.quit()
 
-def load_config():
-    # YAML 파일 로드
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
-
-    return config
-
+def main(config):
+    run_pygame(config)
+    
 if __name__ == "__main__":
     # YAML 파일 로드
     config = load_config()
