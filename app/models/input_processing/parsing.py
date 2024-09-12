@@ -129,7 +129,131 @@ class ScanData:
         self.vision_object_data_vel = []
         theta = math.atan2(self.radar_diff_y, self.radar_diff_x)
 
-        azi_theta = self.h5_dataset['GPS'][()][2]
+        self.azi_theta = self.h5_dataset['GPS'][()][2]
+
+        azi_theta = self.azi_theta * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
+
+        theta = math.pi/2 - azi_theta
+
+        transition_matrix = np.array([[math.cos(theta), - math.sin(theta), self.radar_diff_x],
+                                      [math.sin(theta), math.cos(theta), self.radar_diff_y],
+                                      [0,0,1]])
+        
+        transition_matrix2 = np.array([[1, 0, self.center_x],
+                                      [0, 1, self.center_y],
+                                      [0,0,1]])
+        
+        def meters_to_pixels(meters, lat, zoom, map_size, window_size):
+
+            # 지구의 둘레 (Equatorial Circumference) = 40,075km
+            EARTH_RADIUS = 6378137  # meters
+
+            # 위도를 라디안으로 변환
+            lat_rad = math.radians(lat)
+
+            # 지도 상에서 한 픽셀당 미터를 계산 (줌 레벨과 위도에 따라 다름)
+            meters_per_pixel = (math.cos(lat_rad) * 2 * math.pi * EARTH_RADIUS) / (2 ** zoom * 256)
+
+            # 주어진 미터를 원본 지도 상의 픽셀로 변환
+            pixels = meters / meters_per_pixel
+
+            # 창 크기 대비 지도 크기에 따른 비율로 스케일링
+            scale_x = window_size[0] / map_size[0]
+            scale_y = window_size[1] / map_size[1]
+
+            # 창에서의 픽셀 크기로 변환
+            pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
+
+            return pixels_on_window
+        
+        def tf(pos, transition_matrix, transition_matrix2):
+            
+            position = np.array([[pos[0]],[pos[1]],[1]])
+            position = np.dot(transition_matrix,position)
+            position = np.dot(transition_matrix2, position)
+            pos[0] = position[0][0]
+            pos[1] = position[1][0]
+
+            return pos
+        
+        for vobj in self.scan_data['Vision_object'][:]:
+            new_vobj = VisionObj()
+
+            new_vobj.bbox_posx   = vobj[3]
+            new_vobj.bbox_posy   = vobj[4]
+            new_vobj.bbox_width  = vobj[5]
+            new_vobj.bbox_length = vobj[6]
+
+            posx = vobj[11]
+            posy = vobj[12]
+            posx = -posx
+
+            width = vobj[15]
+            length = vobj[16]
+
+            ul_pos = [int(posx - length/2), int(posy - width/2)]
+            ur_pos = [int(posx - length/2), int(posy + width/2)]
+            dl_pos = [int(posx + length/2), int(posy - width/2)]
+            dr_pos = [int(posx + length/2), int(posy + width/2)]
+
+            velx = vobj[13]
+            vely = vobj[14]
+            velx = -velx
+            
+            posx = meters_to_pixels(posx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            posy = meters_to_pixels(posy, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            
+            ul_pos[0] = meters_to_pixels(ul_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[1] = meters_to_pixels(ul_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+            ur_pos[0] = meters_to_pixels(ur_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[1] = meters_to_pixels(ur_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[0] = meters_to_pixels(dl_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[1] = meters_to_pixels(dl_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[0] = meters_to_pixels(dr_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[1] = meters_to_pixels(dr_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+            ul_pos = tf(ul_pos, transition_matrix, transition_matrix2)
+            ur_pos = tf(ur_pos, transition_matrix, transition_matrix2)
+            dl_pos = tf(dl_pos, transition_matrix, transition_matrix2)
+            dr_pos = tf(dr_pos, transition_matrix, transition_matrix2)
+
+
+            velx = meters_to_pixels(velx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            vely = meters_to_pixels(vely, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            
+            position = np.array([[posx],[posy],[1]])
+            position = np.dot(transition_matrix,position)
+            position = np.dot(transition_matrix2, position)
+            posx = position[0][0]
+            posy = position[1][0]
+
+            velocity = np.array([[velx],[vely],[1]])
+            velocity = np.dot(transition_matrix,velocity)
+            velocity = np.dot(transition_matrix2, velocity)
+            velx = velocity[0][0]
+            vely = velocity[1][0]
+
+            new_vobj.posx = posx
+            new_vobj.posy = posy
+            new_vobj.width = vobj[15] # TODO 수정해야함
+            new_vobj.length = vobj[16]
+            new_vobj.velx = velx - self.radar_posx
+            new_vobj.vely = vely - self.radar_posy
+
+            new_vobj.ul_pos = ul_pos
+            new_vobj.ur_pos = ur_pos
+            new_vobj.dl_pos = dl_pos
+            new_vobj.dr_pos = dr_pos
+
+            self.vision_object_data.append(new_vobj)
+
+def parsing_vision_object_data_for_matching_logic(self, azi_theta):
+        self.vision_object_data = []
+        self.vision_object_data_vel = []
+        theta = math.atan2(self.radar_diff_y, self.radar_diff_x)
+
+        # azi_theta = self.h5_dataset['GPS'][()][2]
 
         azi_theta = azi_theta * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
 

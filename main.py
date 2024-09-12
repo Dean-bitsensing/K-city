@@ -2,14 +2,15 @@ import pygame
 from app import *
 from config import *
 
-
+FPS = 20 # TODO yaml로 옮기기
 def main():
+    model = MainModel()
     pygame.init()
-    screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_LENGTH), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
 
     # Model
-    model = MainModel()
+    
     logging_datas = model.get_h5_datas(KCITY_FOLDER_PATH)
     model.get_logging_data(logging_datas)
     model.set_min_max_scan()

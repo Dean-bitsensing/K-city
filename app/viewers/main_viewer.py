@@ -29,14 +29,12 @@ class MainViewer:
         self.class_init()
         
 
-    def draw(self):
-        # cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg', '../resources/6.jpg', '../resources/7.jpg', '../resources/8.jpg',]
-        cam_data_list = ['../resources/1.jpg', '../resources/2.jpg', '../resources/3.jpg', '../resources/4.jpg', '../resources/5.jpg']
+    def draw(self):      
         self.background_image.draw_background_image()
         self.grid.draw_grid()
         self.radar_postions.draw_radar_positions()
         self.radar_postions.draw_vision_object()
-        # self.cambound.draw_vision_box()/
+        
         self.model.cam_bound_model.cam_list_load(self.model.current_scan_data)
         self.model.cam_bound_model.render_cams(self.screen, self.model.current_scan_data)
         self.cam_left_button.draw_vision_next_list_button()
