@@ -19,7 +19,11 @@ class MainController:
             self.handle_keydown(event)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left mouse button
-                self.handle_mouse_click(event.pos)
+                self.handle_mouse_left_click(event.pos)
+            elif event.button == 2: # middle mouse button
+                pass
+            elif event.button == 3: # right mouse button
+                self.handle_mouse_right_click(event.pos)
 
     def handle_keydown(self, event):
         if event.key == pygame.K_LEFT:
@@ -73,7 +77,7 @@ class MainController:
         elif event.key == pygame.K_0:
             self.model.object_matching()
 
-    def handle_mouse_click(self, mouse_pos):
+    def handle_mouse_left_click(self, mouse_pos):
         # Check if left or right buttons are clicked
         if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
             if True in self.model.cam_bound_model.zoomed_in:
@@ -91,10 +95,17 @@ class MainController:
         
         elif self.model.cam_return_button_model.is_clicked(mouse_pos):
             self.model.cam_bound_model.zoom_init()
-            
+        
+        
 
         else:
             self.model.cam_bound_model.handle_image_click(mouse_pos)
+
+    def handle_mouse_right_click(self, mouse_pos):
+        self.model.select_object(mouse_pos)
+
+
+
 
     def update_config(self, width, length):
         self.model.window_resize(width, length)

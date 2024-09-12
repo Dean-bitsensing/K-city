@@ -35,8 +35,8 @@ class MainViewer:
         self.radar_postions.draw_radar_positions()
         self.radar_postions.draw_vision_object()
         
-        self.model.cam_bound_model.cam_list_load(self.model.current_scan_data)
-        self.model.cam_bound_model.render_cams(self.screen, self.model.current_scan_data)
+        self.model.cam_bound_model.cam_list_load(self.model.logging_data)
+        self.model.cam_bound_model.render_cams(self.screen, self.model.logging_data)
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
         if self.model.cam_bound_model.is_zoom():
@@ -178,10 +178,10 @@ class MultipleRadarPositionView:
 
     def draw_radar_positions(self):
         
-        for data in self.model.current_scan_data:
-            radar_posx = data.radar_posx
-            radar_posy = data.radar_posy
-            pygame.draw.circle(self.screen, data.color, (radar_posx, radar_posy), 5, 0)
+        for data in self.model.logging_data:
+            radar_posx = data.current_scan_data.radar_posx
+            radar_posy = data.current_scan_data.radar_posy
+            pygame.draw.circle(self.screen, data.current_scan_data.color, (radar_posx, radar_posy), 5, 0)
             font = pygame.font.Font(None, 20)
             text = font.render(data.ip, True, self.model.cam_bound_model.cam_ip_box_color)  # 렌더링할 텍스트와 색상
             text_rect = text.get_rect()
@@ -194,10 +194,14 @@ class MultipleRadarPositionView:
     
     def draw_vision_object(self):
         
-        for data in self.model.current_scan_data:
-            for vobj in data.vision_object_data:
-                pygame.draw.circle(self.screen, data.color, (vobj.posx, vobj.posy), 2, 0)
-                pygame.draw.line(self.screen, data.speed_color, (vobj.posx, vobj.posy), (vobj.velx + vobj.posx, vobj.vely + vobj.posy), 1)
+        for data in self.model.logging_data:
+            for vobj in data.current_scan_data.vision_object_data:
+                if vobj.id in data.selected_vobj_id:
+                    pygame.draw.circle(self.screen, (0,0,0), (vobj.posx, vobj.posy), 2, 0)
+                    pygame.draw.circle(self.screen, (250,250,250), (vobj.posx, vobj.posy), 3, 1)
+                else:
+                    pygame.draw.circle(self.screen, data.current_scan_data.color, (vobj.posx, vobj.posy), 2, 0)
+                # pygame.draw.line(self.screen, data.speed_color, (vobj.posx, vobj.posy), (vobj.velx + vobj.posx, vobj.vely + vobj.posy), 1)
                 # pygame.draw.circle(self.screen, RED, (vobj.velx, vobj.vely), 2, 0)
                 polygon_pos = [
                     vobj.dl_pos,
@@ -206,7 +210,7 @@ class MultipleRadarPositionView:
                     vobj.ur_pos,
                     vobj.dr_pos,
                 ]
-                pygame.draw.polygon(self.screen, data.color, polygon_pos, 2)
+                # pygame.draw.polygon(self.screen, data.color, polygon_pos, 2) # vision object square box
 
     
 class DataInfoWindowView:
