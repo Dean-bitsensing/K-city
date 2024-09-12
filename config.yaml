@@ -1,0 +1,45 @@
+yeoju :
+  WGS84 : 'epsg:4326'
+  UTM_zone_32N : 'epsg:32652'
+  cityhall :
+    folder_path : 'C:/yeoju_loggingdata/hongmoon/20240902_154016'
+    center_gps : [37.2977370,127.6373150]
+    radar_gps1 : [0,0]
+    radar_gps2 : [0,0]
+    radar_gps3 : [0,0]
+    radar_azi1 : 0
+    radar_azi2 : 0
+    radar_azi3 : 0
+    intersection_idx : 1
+
+  hongmoon :
+    folder_path : 'C:/yeoju_loggingdata/hongmoon/20240902_154016'
+    center_gps : [37.29562, 127.6365]
+    radar_gps1 : [37.2953237, 127.6365428]
+    radar_gps2 : [37.2955853, 127.6367541]
+    radar_gps3 : [37.2956756, 127.6363820]
+    radar_gps4 : [37.2957997, 127.6366687]
+    radar_azi1 : -11
+    radar_azi2 : 80
+    radar_azi3 : -101
+    radar_azi4 : 155
+    intersection_idx : 2
+
+  haebangchon :
+    folder_path : 'C:/yeoju_loggingdata/hongmoon/20240902_154016'
+    center_gps : [0,0]
+    radar_gps1 : [0,0]
+    radar_gps2 : [0,0]
+    radar_gps3 : [0,0]
+    radar_gps4 : [0,0]
+    radar_azi1 : 0
+    radar_azi2 : 0
+    radar_azi3 : 0
+    radar_azi4 : 0
+    intersection_idx : 34
+
+
+
+
+api_key : 'AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw'
+  

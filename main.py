@@ -1,25 +1,30 @@
 import pygame
 from app import *
 from config import *
+import yaml
 
-FPS = 20 # TODO yaml로 옮기기
-def main():
-    model = MainModel()
+def load_config():
+    # YAML 파일 로드
+    with open('config.yaml', 'r') as file:
+        config = yaml.safe_load(file)
+
+    return config
+
+def run_pygame(config):
+	model = MainModel()
     pygame.init()
     screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
 
     # Model
     
-    logging_datas = model.get_h5_datas(KCITY_FOLDER_PATH)
+    logging_datas = model.get_h5_datas(config)
     model.get_logging_data(logging_datas)
     model.set_min_max_scan()
-    model.grid_model.parsing_map()
-    # View
     
+    # View
     viewer = MainViewer(model, screen)
     model.parsing(viewer.current_scan)
-    
     # Controller
     event_controller = MainController(model, viewer)
  
@@ -50,5 +55,10 @@ def main():
         
     pygame.quit()
 
+def main(config):
+    run_pygame(config)
+    
 if __name__ == "__main__":
-    main()
+    # YAML 파일 로드
+    config = load_config()
+    main(config)
