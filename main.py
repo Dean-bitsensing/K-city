@@ -11,15 +11,17 @@ def load_config():
     return config
 
 def run_pygame(config):
-    model = MainModel()
+    model = MainModel(config)
     pygame.init()
     screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
 
     # Model
     
-    logging_datas = model.get_h5_datas(config['yeoju']['hongmoon']['folder_path'])
+    logging_datas = model.get_h5_datas(config['verona']['esterno1']['folder_path'])
     model.get_logging_data(logging_datas)
+    model.set_atm_metadata()
+    
     model.set_min_max_scan()
     
     # View

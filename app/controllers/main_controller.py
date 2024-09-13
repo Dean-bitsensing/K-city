@@ -77,6 +77,49 @@ class MainController:
         elif event.key == pygame.K_0:
             self.model.object_matching()
 
+        elif event.key == pygame.K_9:
+            self.model.clear_selected()
+
+        elif event.key == pygame.K_i:
+            for atm in self.model.logging_data:
+                if atm.selected:
+                    atm.atm_lat += 0.000001
+                    print(atm.atm_lat)
+        elif event.key == pygame.K_j:
+            for atm in self.model.logging_data:
+                if atm.selected:
+                    atm.atm_long -= 0.000001
+                    print(atm.atm_long)
+        elif event.key == pygame.K_k:
+            for atm in self.model.logging_data:
+                if atm.selected:
+                    atm.atm_lat -= 0.000001
+                    print(atm.atm_lat)
+        elif event.key == pygame.K_l:
+            for atm in self.model.logging_data:
+                if atm.selected:
+                    atm.atm_long += 0.000001
+                    print(atm.atm_long)
+        elif event.key == pygame.K_t:
+            for atm in self.model.logging_data:
+                if atm.selected:
+                    atm.atm_azi_angle += 1
+                    print(atm.atm_azi_angle)
+        elif event.key == pygame.K_y:
+            for atm in self.model.logging_data:
+                if atm.selected:
+                    atm.atm_azi_angle -= 1
+                    print(atm.atm_azi_angle)
+        
+        elif event.key == pygame.K_8:
+            for atm in self.model.logging_data:
+                if atm.selected:
+                    print(f'file name     : {atm.file_name}')
+                    print(f'ip            : {atm.ip}')
+                    print(f'atm_lat       : {atm.atm_lat}')
+                    print(f'atm_long      : {atm.atm_long}')
+                    print(f'atm_azi_angle : {atm.atm_azi_angle}')
+
     def handle_mouse_left_click(self, mouse_pos):
         # Check if left or right buttons are clicked
         if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
