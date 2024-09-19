@@ -73,6 +73,7 @@ class MainModel:
             self.logging_data[idx].current_scan_data = ScanData(file.logging_data, current_scan, file)    
             self.logging_data[idx].current_scan_data.parsing_status()
             self.logging_data[idx].current_scan_data.parsing_gps_into_meter(self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
+            # print(self.logging_data[idx].file_name)
             self.logging_data[idx].current_scan_data.parsing_image()
             self.logging_data[idx].current_scan_data.parsing_vision_object_data()
             self.logging_data[idx].current_scan_data.parsing_fusion_object_data()

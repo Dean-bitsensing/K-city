@@ -11,6 +11,7 @@ class MainController:
         self.viewer = viewer
 
     def handle_event(self, event):
+        
         if event.type == pygame.QUIT:
             self.viewer.running = False
         elif event.type == pygame.VIDEORESIZE:
@@ -37,6 +38,7 @@ class MainController:
             self.viewer.paused = True
             if self.viewer.current_scan + SKIP_SIZE < self.model.max_scan:
                 self.viewer.current_scan += SKIP_SIZE
+                
             else:
                 self.viewer.current_scan = self.model.max_scan
             

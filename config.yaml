@@ -42,7 +42,7 @@ verona :
   WGS84 : 'epsg:4326'
   UTM_zone_32N : 'epsg:32652'
   esterno1 :
-    folder_path : 'D:\k-city\verona'
+    folder_path : 'D:\k-city\good_verona\datas'
     center_gps : [0,0]
     radar_gps1 : [0,0]
     radar_gps2 : [0,0]

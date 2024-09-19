@@ -171,7 +171,7 @@ class CamBoundModel(WindowModel):
             screen.blit(image, pos)
             pygame.draw.rect(screen, color, rect, 2)
             screen.blit(myText, pos)
-            self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width, self.length), pos)
+            self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width, self.length), pos, color)
         else:
             # Render all images at their normal size
             for cam, pos, ip, color, idx in zip(cams, positions, ips, colors, cam_indices):
@@ -185,9 +185,9 @@ class CamBoundModel(WindowModel):
                 screen.blit(image, pos)
                 pygame.draw.rect(screen, color, rect, 2)
                 screen.blit(myText, pos)
-                self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width/2, self.length/2), pos)
+                self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width/2, self.length/2), pos, color)
 
-    def render_bbox(self, screen, vision_object_data, idicies, image_size, cam_position):
+    def render_bbox(self, screen, vision_object_data, idicies, image_size, cam_position, color):
         origin_size = (1024, 576)
         
         width_scale = image_size[0]/origin_size[0]
@@ -205,7 +205,7 @@ class CamBoundModel(WindowModel):
             bbox_length = int(width_scale * bbox_length)
 
             rect = pygame.Rect(bbox_posx, bbox_posy, bbox_width, bbox_length)
-            pygame.draw.rect(screen, YELLOW, rect, 2)
+            pygame.draw.rect(screen, color, rect, 1)
 
 
 

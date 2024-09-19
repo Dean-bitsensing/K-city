@@ -98,8 +98,7 @@ class CamBoundView:
         pygame.draw.line(self.screen, self.model.color, self.model.center_hor_line_start_pos, self.model.center_hor_line_end_pos, 2)
         pygame.draw.line(self.screen, self.model.color, self.model.center_ver_line_start_pos, self.model.center_ver_line_end_pos, 2)
 
-    def draw_bbox(self):
-        pass
+    
 
 class CamChangeLeftButtonView:
     def __init__(self, model, screen):
@@ -177,6 +176,18 @@ class MultipleRadarPositionView:
         self.model = model
         self.screen = screen
 
+    def check_in_grid_window(self, x, y):
+        check_x = False
+        check_y = False
+        if 0 < x < self.model.window_model.GRID_WINDOW_WIDTH:
+            check_x = True
+        
+        if 0 < y < self.model.window_model.GRID_WINDOW_LENGTH:
+            check_y = True
+
+        return check_x and check_y
+        
+        
     def draw_radar_positions(self):
         
         for data in self.model.logging_data:
@@ -200,6 +211,8 @@ class MultipleRadarPositionView:
         
         for data in self.model.logging_data:
             for vobj in data.current_scan_data.vision_object_data:
+                if not self.check_in_grid_window(vobj.posx, vobj.posy):
+                    continue
                 if vobj.id in data.selected_vobj_id:
                     pygame.draw.circle(self.screen, (0,0,0), (vobj.posx, vobj.posy), 2, 0)
                     pygame.draw.circle(self.screen, (250,250,250), (vobj.posx, vobj.posy), 3, 1)
@@ -219,6 +232,8 @@ class MultipleRadarPositionView:
     def draw_fusion_object(self):
         for data in self.model.logging_data:
             for fobj in data.current_scan_data.fusion_object_data:
+                if not self.check_in_grid_window(fobj.trns_posx, fobj.trns_posy):
+                    continue
                 if fobj.id in data.selected_fobj_id:
                     pygame.draw.circle(self.screen, (0,0,0), (fobj.trns_posx, fobj.trns_posy), 2, 0)
                     pygame.draw.circle(self.screen, (250,250,250), (fobj.trns_posx, fobj.trns_posy), 3, 1)

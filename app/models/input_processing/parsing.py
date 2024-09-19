@@ -191,6 +191,7 @@ class ScanData:
 
 
     def parsing_image(self):
+        
         self.image = self.current_scan_data['Image'][()]
 
     def parsing_fusion_object_data(self):
