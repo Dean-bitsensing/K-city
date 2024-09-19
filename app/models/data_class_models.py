@@ -1,4 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List
+import numpy as np
 import h5py, json
 import math
 
@@ -38,89 +40,93 @@ class RadarObj:
         idx : int
 
 
+@dataclass
 class VisionObj:
-    def __init__(self):
-        # 변환된 좌표들이 들어오는 공간이다.
-        self.id = 0
-        self.class_id = 0
-        self.confidence = 0
+    # Basic attributes
+    id: int = 0
+    class_id: int = 0
+    confidence: float = 0.0
 
-        self.bbox_posx = 0
-        self.bbox_posy = 0
-        self.bbox_width = 0
-        self.bbox_length = 0
+    # Bounding box attributes
+    bbox_posx: int = 0
+    bbox_posy: int = 0
+    bbox_width: int = 0
+    bbox_length: int = 0
 
-        self.match_robj_id = 0
-        self.status = 0
-        self.move_state = 0
-        self.alive_age = 0
+    # Matching and status attributes
+    match_robj_id: int = 0
+    status: int = 0
+    move_state: int = 0
+    alive_age: int = 0
 
-        self.posx = 0 
-        self.posy = 0
+    # Position and velocity attributes
+    posx: float = 0.0
+    posy: float = 0.0
+    velx: float = 0.0
+    vely: float = 0.0
 
-        self.velx = 0
-        self.vely = 0
+    # Size attributes
+    width: float = 0.0
+    length: float = 0.0
 
-        self.width = 0
-        self.length = 0
+    # Additional attributes
+    lane: int = 0
+    heading_angle_deg: float = 0.0
 
-        self.lane = 0
-        self.heading_angle_deg = 0
+    # Transformed position attributes
+    trns_posx: float = 0.0
+    trns_posy: float = 0.0
+    ul_pos: List[float] = field(default_factory=lambda: [0.0, 0.0])
+    ur_pos: List[float] = field(default_factory=lambda: [0.0, 0.0])
+    dl_pos: List[float] = field(default_factory=lambda: [0.0, 0.0])
+    dr_pos: List[float] = field(default_factory=lambda: [0.0, 0.0])
 
-        self.trns_posx = 0 # Trans pos 따로 저장하기
-        self.trns_posy = 0
-        self.ul_pos = [0, 0]
-        self.ur_pos = [0, 0]
-        self.dl_pos = [0, 0]
-        self.dr_pos = [0, 0]
-
-        self.selected = False # 화면 표출 시 색 변환을 위한 변수
-
-        self.before_posx = 0
-        self.before_posy = 0
-
+    # Visualization attributes
+    selected: bool = False  # For changing color during display
+    before_posx: float = 0.0
+    before_posy: float = 0.0
 
 
+@dataclass
 class FusionObj:
-    def __init__(self):
-        
-        self.id = 0
-        self.status = 0
-        self.updata_state = 0
-        self.move_state = 0
-        self.alive_age = 0
+    # Basic attributes
+    id: int = 0
+    status: int = 0
+    update_state: int = 0  # Corrected typo from 'updata_state' to 'update_state'
+    move_state: int = 0
+    alive_age: int = 0
 
-        self.posx = 0 
-        self.posy = 0
+    # Position and velocity attributes
+    posx: float = 0.0
+    posy: float = 0.0
+    ref_posx: float = 0.0
+    ref_posy: float = 0.0
+    velx: float = 0.0
+    vely: float = 0.0
 
-        self.ref_posx = 0 
-        self.ref_posy = 0
+    # Additional attributes
+    heading_angle_deg: float = 0.0
+    power: float = 0.0
+    width: float = 0.0
+    length: float = 0.0
+    class_id: int = 0
+    fusion_type: int = 0
+    fusion_age: int = 0
+    match_vobj_id: int = 0
 
-        self.velx = 0
-        self.vely = 0
+    # Transformed position attributes
+    trns_posx: float = 0.0
+    trns_posy: float = 0.0
+    ul_pos: List[float] = field(default_factory=lambda: [0.0, 0.0])
+    ur_pos: List[float] = field(default_factory=lambda: [0.0, 0.0])
+    dl_pos: List[float] = field(default_factory=lambda: [0.0, 0.0])
+    dr_pos: List[float] = field(default_factory=lambda: [0.0, 0.0])
 
-        self.heading_angle_deg = 0
-        self.power = 0
-        self.width = 0
-        self.length = 0
-        self.class_id = 0
-        self.fusion_type = 0
-        self.fusion_age = 0
-        self.match_vobj_id = 0
+    # Visualization attributes
+    selected: bool = False  # For changing color during display
+    before_posx: float = 0.0
+    before_posy: float = 0.0
 
-        # 변환된 좌표들이 들어오는 공간이다.
-
-        self.trns_posx = 0
-        self.trns_posy = 0
-        self.ul_pos = [0, 0]
-        self.ur_pos = [0, 0]
-        self.dl_pos = [0, 0]
-        self.dr_pos = [0, 0]
-
-        self.selected = False # 화면 표출 시 색 변환을 위한 변수
-
-        self.before_posx = 0
-        self.before_posy = 0
 
 class ScanData:
     def __init__(self, logging_data, current_scan):

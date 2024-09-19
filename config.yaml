@@ -1,94 +1,83 @@
-yeoju :
-  WGS84 : 'epsg:4326'
-  UTM_zone_32N : 'epsg:32652'
-  cityhall :
-    folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
-    center_gps : [37.2977370,127.6373150]
-    radar_gps1 : [0,0]
-    radar_gps2 : [0,0]
-    radar_gps3 : [0,0]
-    radar_azi1 : 0
-    radar_azi2 : 0
-    radar_azi3 : 0
-    intersection_idx : 1
+# yeoju :
+#   WGS84 : 'epsg:4326'
+#   UTM_zone_32N : 'epsg:32652'
+#   cityhall :
+#     folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
+#     center_gps : [37.2977370,127.6373150]
+#     radar_gps1 : [0,0]
+#     radar_gps2 : [0,0]
+#     radar_gps3 : [0,0]
+#     radar_azi1 : 0
+#     radar_azi2 : 0
+#     radar_azi3 : 0
+#     intersection_idx : 1
 
-  hongmoon :
-    folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
-    center_gps : [37.29562, 127.6365]
-    radar_gps1 : [37.2953237, 127.6365428]
-    radar_gps2 : [37.2955853, 127.6367541]
-    radar_gps3 : [37.2956756, 127.6363820]
-    radar_gps4 : [37.2957997, 127.6366687]
-    radar_azi1 : -11
-    radar_azi2 : 80
-    radar_azi3 : -101
-    radar_azi4 : 155
-    intersection_idx : 2
+#   hongmoon :
+#     folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
+#     center_gps : [37.29562, 127.6365]
+#     radar_gps1 : [37.2953237, 127.6365428]
+#     radar_gps2 : [37.2955853, 127.6367541]
+#     radar_gps3 : [37.2956756, 127.6363820]
+#     radar_gps4 : [37.2957997, 127.6366687]
+#     radar_azi1 : -11
+#     radar_azi2 : 80
+#     radar_azi3 : -101
+#     radar_azi4 : 155
+#     intersection_idx : 2
 
-  haebangchon :
-    folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
-    center_gps : [0,0]
-    radar_gps1 : [0,0]
-    radar_gps2 : [0,0]
-    radar_gps3 : [0,0]
-    radar_gps4 : [0,0]
-    radar_azi1 : 0
-    radar_azi2 : 0
-    radar_azi3 : 0
-    radar_azi4 : 0
-    intersection_idx : 34
+#   haebangchon :
+#     folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
+#     center_gps : [0,0]
+#     radar_gps1 : [0,0]
+#     radar_gps2 : [0,0]
+#     radar_gps3 : [0,0]
+#     radar_gps4 : [0,0]
+#     radar_azi1 : 0
+#     radar_azi2 : 0
+#     radar_azi3 : 0
+#     radar_azi4 : 0
+#     intersection_idx : 34
 
 verona :
-  WGS84 : 'epsg:4326'
-  UTM_zone_32N : 'epsg:32652'
-  esterno1 :
+  info:
+    center_gps : [45.4310364, 10.9880780]
+    atm_num : 10
+    intersection_num : 2
+    API_KEY : 'AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw' 
+    WGS84 : 'epsg:4326'
+    UTM_zone_32N : 'epsg:32652'
+  esterno : #밑에 교차로 S5 ~ S10
+    atm_nun: 6
     folder_path : 'D:\k-city\good_verona\datas'
     center_gps : [0,0]
-    radar_gps1 : [0,0]
-    radar_gps2 : [0,0]
-    radar_gps3 : [0,0]
-    radar_gps4 : [0,0]
-    radar_azi1 : 0
-    radar_azi2 : 0
-    radar_azi3 : 0
-    radar_azi4 : 0
-    intersection_idx : 34
-  esterno2 :
+    radar_gps_1.0.0.20 : [45.4307813, 10.9878318]
+    radar_gps_1.0.0.21 : [45.430319,	10.9883385]
+    radar_gps_1.0.0.22 : [45.4301545,	10.9879317]
+    radar_gps_1.0.0.23 : [45.4302935,	10.9878867]
+    radar_gps_1.0.0.24 : [45.4307873,	10.9877108]
+    radar_gps_1.0.0.25 : [45.430359,	10.9882485]
+    radar_azi_angle_1.0.0.20 : 246
+    radar_azi_angle_1.0.0.21 : 0
+    radar_azi_angle_1.0.0.22 : -27.58
+    radar_azi_angle_1.0.0.23 : 20
+    radar_azi_angle_1.0.0.24 : 14
+    radar_azi_angle_1.0.0.25 : 74
+    intersection_idx : 2
+
+  interno : #위에 교차로 S1 ~ S4
+    atm_nun: 4
     folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
     center_gps : [0,0]
-    radar_gps1 : [0,0]
-    radar_gps2 : [0,0]
-    radar_gps3 : [0,0]
-    radar_gps4 : [0,0]
-    radar_azi1 : 0
-    radar_azi2 : 0
-    radar_azi3 : 0
-    radar_azi4 : 0
-    intersection_idx : 34
-  interno1 :
-    folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
-    center_gps : [0,0]
-    radar_gps1 : [0,0]
-    radar_gps2 : [0,0]
-    radar_gps3 : [0,0]
-    radar_gps4 : [0,0]
-    radar_azi1 : 0
-    radar_azi2 : 0
-    radar_azi3 : 0
-    radar_azi4 : 0
-    intersection_idx : 34
-  interno2 : 
-    folder_path : 'C:\yeoju_loggingdata\hongmoon\20240912_183329'
-    center_gps : [0,0]
-    radar_gps1 : [0,0]
-    radar_gps2 : [0,0]
-    radar_gps3 : [0,0]
-    radar_gps4 : [0,0]
-    radar_azi1 : 0
-    radar_azi2 : 0
-    radar_azi3 : 0
-    radar_azi4 : 0
-    intersection_idx : 34
+    radar_gps_1.0.0.10 : [45.4317387,	10.9882638]
+    radar_gps_1.0.0.11 : [45.4316862,	10.9886965]
+    radar_gps_1.0.0.12 : [45.4316862,	10.9886965]
+    radar_gps_1.0.0.13 : [45.4317387,	10.9882638]
+    radar_azi_angle_1.0.0.10 : 0
+    radar_azi_angle_1.0.0.11 : 0
+    radar_azi_angle_1.0.0.12 : 157.36
+    radar_azi_angle_1.0.0.13 : 0
+    intersection_idx : 1
+
 
 api_key : 'AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw'
 

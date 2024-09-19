@@ -11,22 +11,20 @@ def load_config():
     return config
 
 def run_pygame(config):
-    model = MainModel(config)
+
+    model = MainModel(config['verona'])
     pygame.init()
     screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
 
     # Model
     
-    logging_datas = model.get_h5_datas(config['verona']['esterno1']['folder_path'])
-    model.get_logging_data(logging_datas)
-    model.set_atm_metadata()
-    
+    model.get_logging_data()    
     model.set_min_max_scan()
     
     # View
     viewer = MainViewer(model, screen)
-    model.parsing(viewer.current_scan)
+    model.load_data(viewer.current_scan)
     # Controller
     event_controller = MainController(model, viewer)
  
@@ -39,7 +37,7 @@ def run_pygame(config):
         screen.fill((0, 0, 0))
         if viewer.current_scan != viewer.before_scan:
             viewer.before_scan = viewer.current_scan
-            model.parsing(viewer.current_scan)
+            model.load_data(viewer.current_scan)
         viewer.draw()
         pygame.display.flip() # 화면 업데이트
         # pygame.display.update()

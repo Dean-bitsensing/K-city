@@ -1,31 +1,39 @@
 import h5py
-import config
 from .colors import *
-from .input_processing import *
-import pygame
-import io, os
+import os
 from pathlib import Path
-import cv2
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
-from .window_model import *
+from .window_model import WindowModel
+from .map_grid_model import MapGridModel
+from .camera_display_model import CameraDisplayModel
+from .button_models import CameraReturnButton, CameraLeftButton, CameraRightButton
+from .info_window_model import InfoWindowModel
+from.data_models import *
 
 class MainModel:
-    def __init__(self):
+    def __init__(self, config):
+
+        self.view_mode = 0  # 0 : OverAll View , 1 : Intersection View , 2 : ATM View
+
+        self.config = config
         self.radar_only_mode = False
         self.logging_data_num = 0
-        
+        self.logging_data = []
+        self.intersections = []
         self.init_model_class()
 
-    def get_logging_data(self, files:list): # 로깅데이터 가져오고, ATM 기본 설정들 입력해주기
-        self.logging_data = []
-        for file in files:
-            logging_data = AtmData()
-            logging_data.logging_data = h5py.File(file)
-            ip = file.split('_')[-1]
-            logging_data.ip = ip
-            self.logging_data.append(logging_data)
-        self.logging_data_num = len(self.logging_data)
+
+    def get_logging_data(self): # 로깅데이터 가져오고, ATM 기본 설정들 입력해주기
+        for intersection in self.config.keys():
+            if intersection == 'None':
+                continue
+            if intersection != 'info':
+                itsc = Intersection(self.config[intersection], intersection)
+                itsc.initiate()
+                self.intersections.append(itsc)
+                self.logging_data.extend(itsc.h5_files)
+
         
     def set_min_max_scan(self): # 여러개의 logging file중 가장 작은 값으로 설정해야함.
         
@@ -41,52 +49,33 @@ class MainModel:
             
             if max < self.max_scan:
                 self.max_scan = max
-            
     
-
-    def parsing(self,current_scan):
-    
-        for log_data in self.logging_data:
-            log_data.init_current_scan_data()
-
-        # self.current_scan_data = [0] * self.logging_data_num
-        color_set = (BLUE, GREEN, RED, YELLOW,BLUE, GREEN, RED, YELLOW) # TODO color 추가해줘야함. 맵에서 잘 보이는거 위주로 추가하기
-        for idx, file in enumerate(self.logging_data):
-            file_path = Path(file.logging_data.filename)
-            self.logging_data[idx].current_scan_data = ScanData(file.logging_data, current_scan)    
-            self.logging_data[idx].current_scan_data.parsing_status()
-            self.logging_data[idx].current_scan_data.parsing_gps_into_meter(self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
-            self.logging_data[idx].current_scan_data.parsing_image()
-            self.logging_data[idx].current_scan_data.parsing_vision_object_data()
-            self.logging_data[idx].current_scan_data.color = color_set[idx]
-            self.logging_data[idx].current_scan_data.speed_color = BLACK
-            
+    def load_data(self, current_scan):
+        for intersection in self.intersections:
+            for atm in intersection.atms:
+                atm.get_scan_data(current_scan, self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
 
     def init_model_class(self):
         self.window_model = WindowModel()
-        self.grid_model = GridModel()
-        self.cam_bound_model = CamBoundModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH)
-        self.cam_change_left_button_model = CamChangeLeftButtonModel()
-        self.cam_change_right_button_model = CamChangeRightButtonModel()
-        self.cam_return_button_model = CamReturnButtonModel()
-        self.data_info_window_model = DataInfoWindowModel()
+        self.grid_model = MapGridModel()
+        self.cam_bound_model = CameraDisplayModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH)
+        self.cam_change_left_button_model = CameraLeftButton()
+        self.cam_change_right_button_model = CameraRightButton()
+        self.cam_return_button_model = CameraReturnButton()
+        self.data_info_window_model = InfoWindowModel()
         
         
 
     def window_resize(self, width, length):
         self.window_model = WindowModel(width, length)
-        self.grid_model = GridModel(width, length)
-        self.cam_bound_model = CamBoundModel(width, length)
-        self.cam_change_left_button_model = CamChangeLeftButtonModel(width, length)
-        self.cam_change_right_button_model = CamChangeRightButtonModel(width, length)
-        self.cam_return_button_model = CamReturnButtonModel(width, length)
-        self.data_info_window_model = DataInfoWindowModel(width, length)
+        self.grid_model = MapGridModel(width, length)
+        self.cam_bound_model = CameraDisplayModel(width, length)
+        self.cam_change_left_button_model = CameraLeftButton(width, length)
+        self.cam_change_right_button_model = CameraRightButton(width, length)
+        self.cam_return_button_model = CameraReturnButton(width, length)
+        self.data_info_window_model = InfoWindowModel(width, length)
 
-    def get_h5_datas(self, directory):
-    # 폴더 내부의 모든 파일 중 .h5 확장자를 가진 파일을 리스트로 반환
-        h5_files = [f'{directory}/'+file for file in os.listdir(directory) if file.endswith('.h5')]
-        return h5_files
-    
+
 
     def select_object(self, mouse_pos):
         for idx, data in enumerate(self.logging_data):
@@ -98,14 +87,8 @@ class MainModel:
                     vobj.selected = True
                     obj_id = vobj.id
                     data.selected_vobj_id.append(obj_id)
-                    print(f'data : {idx}, list : {data.selected_vobj_id}')
-        
+                    print(f'data : {idx}, list : {data.selected_vobj_id}')      
 
-            
-
-
-
-    
     def object_matching(self):
         azi_thetas = [0] * len(self.current_scan_data)
         for idx, data in enumerate(self.current_scan_data):

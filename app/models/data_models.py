@@ -1,204 +1,95 @@
-import json
-import sys
-import os
-import requests
-import math
+from data_class_models import *
+import h5py, json
 import numpy as np
+import math
+import os
+import sys
+import requests
 from io import BytesIO
 from PIL import Image
-from pyproj import Transformer
-from config import *
-from dataclasses import dataclass
+from global_variables import *
+from colors import *
 
 
-class AtmData:
-    def __init__(self):
-        self.logging_data = None
-        self.ip = '-1'
-        self.file_name = None
-        self.current_scan_data = ScanData
-        # self.selected_vobj_id = []
-        self.selected_fobj_id = []
+class Intersection:
+    def __init__(self, config : dict, intersection_name : str):
+        self.color_set = (BLUE, GREEN, RED, YELLOW,BLUE, GREEN, RED, YELLOW)
+        self.h5_files = []
+        self.atms = []
+        ###need to be reafactorized
+        self.config = config
+        self.name = intersection_name
 
-        self.atm_lat = 0
-        self.atm_lat = 0
-        self.atm_azi_angle = 0
-        self.selected = False
+        self.is_clicked = False
 
-        self.atm_posx = 0
-        self.atm_posy = 0
+    def initiate(self):
+        self.set_h5_files()
+        self.set_atms()
 
-    def init_current_scan_data(self):
-        self.current_scan_data = ScanData
+    def set_h5_files(self):
+        logging_data_path = self.config['folder_path']
+        self.h5_files = [f'{logging_data_path}/'+file for file in os.listdir(logging_data_path) if file.endswith('.h5')]
 
-    def clear_selected_obj_id(self):
+    def set_atms(self):
+        for idx, h5_file in enumerate(self.h5_files):
+
+            lat = self.config['lat']
+            long = self.config['long']
+            azi_angle = self.config['azi_angle']
+            atm_color = self.color_set[idx]
+
+            atm = Atm(lat, long, azi_angle, atm_color, h5_file)
+
+            self.atms.append(atm)
+
+
+class Atm(Intersection):
+    def __init__(self, lat, long, azi_angle, atm_color,logging_data_path):
+        self.logging_data_path = logging_data_path
+        self.logging_data = h5py.File(logging_data_path)
+        self.ip = logging_data_path.split('_')[-1][:-3]
+        self.intersection_number = int(self.ip.split('.')[-1])//10
+
+        self.atm_lat = lat
+        self.atm_long = long
+        self.atm_azi_angle = azi_angle
+        self.color = atm_color
+
         self.selected_vobj_id = []
         self.selected_fobj_id = []
-        self.selected = False
+        self.config
 
-class FusionObj:
-    def __init__(self):
+    def get_scan_data(self, current_scan, center_x, center_y):
+
+        current_scan_data = ScanData(current_scan)
         
-        self.id = 0
-        self.status = 0
-        self.updata_state = 0
-        self.move_state = 0
-        self.alive_age = 0
+        current_scan_data.parsing_status()
+        current_scan_data.parsing_gps_into_meter(center_x,center_y)
+        current_scan_data.parsing_fusion_object_data()
+        current_scan_data.parsing_vision_object_data()
+        current_scan_data.parsing_image()
 
-        self.posx = 0 
-        self.posy = 0
+        self.current_scan_data = current_scan_data
+    
 
-        self.ref_posx = 0 
-        self.ref_posy = 0
-
-        self.velx = 0
-        self.vely = 0
-
-        self.heading_angle_deg = 0
-        self.power = 0
-        self.width = 0
-        self.length = 0
-        self.class_id = 0
-        self.fusion_type = 0
-        self.fusion_age = 0
-        self.match_vobj_id = 0
-
-        # 변환된 좌표들이 들어오는 공간이다.
-
-        self.trns_posx = 0
-        self.trns_posy = 0
-        self.ul_pos = [0, 0]
-        self.ur_pos = [0, 0]
-        self.dl_pos = [0, 0]
-        self.dr_pos = [0, 0]
-
-        self.selected = False # 화면 표출 시 색 변환을 위한 변수
-
-        self.before_posx = 0
-        self.before_posy = 0
-
-class VisionObj:
-    def __init__(self):
-        # 변환된 좌표들이 들어오는 공간이다.
-        self.id = 0
-        self.class_id = 0
-        self.confidence = 0
-
-        self.bbox_posx = 0
-        self.bbox_posy = 0
-        self.bbox_width = 0
-        self.bbox_length = 0
-
-        self.match_robj_id = 0
-        self.status = 0
-        self.move_state = 0
-        self.alive_age = 0
-
-        self.posx = 0 
-        self.posy = 0
-
-        self.velx = 0
-        self.vely = 0
-
-        self.width = 0
-        self.length = 0
-
-        self.lane = 0
-        self.heading_angle_deg = 0
-
-        self.trns_posx = 0 # Trans pos 따로 저장하기
-        self.trns_posy = 0
-        self.ul_pos = [0, 0]
-        self.ur_pos = [0, 0]
-        self.dl_pos = [0, 0]
-        self.dr_pos = [0, 0]
-
-        self.selected = False # 화면 표출 시 색 변환을 위한 변수
-
-        self.before_posx = 0
-        self.before_posy = 0
-
-class ScanData:
-    def __init__(self, h5_dataset,current_scan, atm_data):
+class ScanData(Atm):
+    def __init__(self,current_scan):
         self.current_scan = current_scan
-        
-        self.h5_dataset = h5_dataset
-        self.current_scan_data = h5_dataset['SCAN_{:05d}'.format(current_scan)]
-        self.atm_data = atm_data
-
-        self.intersection_number = 1
-        self.color = None
-        
-        # self.transformation = Transformation()
+        self.current_scan_data = self.logging_data['SCAN_{:05d}'.format(current_scan)]
 
     def parsing_status(self):
         status_data = self.current_scan_data['Status'][:]
         self.status_json = json.loads(status_data.tobytes().decode('utf-8'))
 
-
-    def parsing_gps_into_meter(self, center_x, center_y):
-        def latlng_to_pixel(lat, lng, center_lat, center_lng, zoom, map_size, window_size):
-            
-            TILE_SIZE = 256
-            scale = 2 ** zoom  # 줌 레벨에 따른 스케일
-
-            # 경도를 픽셀로 변환
-            def lng_to_pixel_x(lng):
-                return (lng + 180) / 360 * scale * TILE_SIZE
-
-            # 위도를 픽셀로 변환 (머케이터 도법)
-            def lat_to_pixel_y(lat):
-                siny = math.sin(lat * math.pi / 180)
-                y = math.log((1 + siny) / (1 - siny))
-                return (1 - y / (2 * math.pi)) * scale * TILE_SIZE / 2
-
-            # 지도 중심 좌표의 픽셀 좌표 구하기
-            center_x = lng_to_pixel_x(center_lng)
-            center_y = lat_to_pixel_y(center_lat)
-
-            # 주어진 좌표의 픽셀 좌표 구하기
-            pixel_x = lng_to_pixel_x(lng) - center_x + map_size[0] // 2
-            pixel_y = lat_to_pixel_y(lat) - center_y + map_size[1] // 2
-
-            # 창 크기 대비 지도 크기에 따른 비율로 스케일링
-            scale_x = window_size[0] / map_size[0]
-            scale_y = window_size[1] / map_size[1]
-
-            # Pygame 창 상의 픽셀 좌표로 변환
-            pixel_x_on_window = int(pixel_x * scale_x)
-            pixel_y_on_window = int(pixel_y * scale_y)
-
-            return pixel_x_on_window, pixel_y_on_window
-        
-        # gps에서 들어오는 데이터
-
-        self.latitiude = self.atm_data.atm_lat
-        self.longitude = self.atm_data.atm_long
-
-        
-        # test
-        ##
-        radar_x, radar_y = latlng_to_pixel(self.latitiude, self.longitude, LAT_LANDMARK, LON_LANDMARK, 18, (640, 640), (center_x*2, center_y*2))
-    
-
-        self.radar_diff_x = radar_x - center_x
-        self.radar_diff_y = radar_y - center_y 
-        self.center_x = center_x
-        self.center_y = center_y
-        self.radar_posx = radar_x
-        self.radar_posy = radar_y
-        
-
-
     def parsing_image(self):
-        
         self.image = self.current_scan_data['Image'][()]
+
 
     def parsing_fusion_object_data(self):
         self.fusion_object_data = []
         self.fusion_object_data_vel = []
 
-        self.azi_theta = self.atm_data.atm_azi_angle
+        self.azi_theta = self.atm_azi_angle
 
         azi_theta = self.azi_theta * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
 
@@ -214,27 +105,13 @@ class ScanData:
         
         
         
-        
-        
-        def tf(pos, transition_matrix, transition_matrix2, heading_matrix, posx, posy):
+        def tf(pos, transition_matrix, transition_matrix2):
             
             position = np.array([[pos[0]],[pos[1]],[1]])
-            
             position = np.dot(transition_matrix,position)
-            
             position = np.dot(transition_matrix2, position)
-            
             pos[0] = position[0][0]
             pos[1] = position[1][0]
-
-            posx_c = pos[0] - posx
-            posy_c = pos[1] - posy
-
-            position = np.array([[posx_c],[posy_c],[1]])
-            position = np.dot(heading_matrix,position)
-
-            pos[0] = position[0][0] + posx
-            pos[1] = position[1][0] + posy
 
             return pos
         
@@ -246,7 +123,6 @@ class ScanData:
             posy                = fobj[6]
             velx                = fobj[9]
             vely                = fobj[10]
-            heading_angle_deg   = fobj[11]
             width               = fobj[13]
             length              = fobj[14]
 
@@ -256,20 +132,18 @@ class ScanData:
             new_fobj.vely   = vely
             new_fobj.width  = width
             new_fobj.length = length
-            new_fobj.heading_angle_deg = heading_angle_deg
+
 
             posx = -posx
             velx = -velx
             
-            heading_angle_rad = -heading_angle_deg * math.pi/180
+
             ul_pos = [int(posx - length/2), int(posy - width/2)]
             ur_pos = [int(posx - length/2), int(posy + width/2)]
             dl_pos = [int(posx + length/2), int(posy - width/2)]
             dr_pos = [int(posx + length/2), int(posy + width/2)]
 
-            heading_transition_matrix = np.array([[math.cos(heading_angle_rad), - math.sin(heading_angle_rad), 0],
-                                      [math.sin(heading_angle_rad), math.cos(heading_angle_rad), 0],
-                                      [0,0,1]])
+            
             
             posx = meters_to_pixels(posx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
             posy = meters_to_pixels(posy, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
@@ -279,15 +153,19 @@ class ScanData:
 
             ur_pos[0] = meters_to_pixels(ur_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
             ur_pos[1] = meters_to_pixels(ur_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+
             dl_pos[0] = meters_to_pixels(dl_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
             dl_pos[1] = meters_to_pixels(dl_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+
             dr_pos[0] = meters_to_pixels(dr_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
             dr_pos[1] = meters_to_pixels(dr_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
 
-            
+            ul_pos = tf(ul_pos, transition_matrix, transition_matrix2)
+            ur_pos = tf(ur_pos, transition_matrix, transition_matrix2)
+            dl_pos = tf(dl_pos, transition_matrix, transition_matrix2)
+            dr_pos = tf(dr_pos, transition_matrix, transition_matrix2)
 
-            new_fobj.before_posx = posx
-            new_fobj.before_posy = posy
             
             position = np.array([[posx],[posy],[1]])
             position = np.dot(transition_matrix,position)
@@ -298,10 +176,6 @@ class ScanData:
             new_fobj.trns_posx = posx
             new_fobj.trns_posy = posy
             
-            ul_pos = tf(ul_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
-            ur_pos = tf(ur_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
-            dl_pos = tf(dl_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
-            dr_pos = tf(dr_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
 
             new_fobj.ul_pos = ul_pos
             new_fobj.ur_pos = ur_pos
@@ -418,50 +292,58 @@ class ScanData:
             self.vision_object_data.append(new_vobj)
 
 
-def parsing_image_data_from_google(center_lat, center_lng, grid_width, grid_height, zoom, maptype, image_path):
-    map_url = get_static_map_url(center_lat, center_lng, grid_width, grid_height, zoom, maptype)
-
-    # 지도 이미지 가져오기
-    try:
-        response = requests.get(map_url)
-        response.raise_for_status()  # HTTP 요청이 성공적인지 확인
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching map image: {e}")
-        sys.exit()
-
-    # HTTP 요청이 성공적이라면 PNG 파일로 저장
-    if response.status_code == 200:
-        try:
-            # 이미지를 BytesIO로 읽고, Pillow 이미지로 열기
-            map_image = Image.open(BytesIO(response.content))
-                
-            # if not os.path.exists('app'):
-            #     os.makedirs('images')
-            # PNG 파일로 저장
-            if not os.path.exists(image_path):
-                map_image.save(image_path, 'PNG')
-                print("Image saved as 'map_image.png'")
+    def parsing_gps_into_meter(self, center_x, center_y):
+        def latlng_to_pixel(lat, lng, center_lat, center_lng, zoom, map_size, window_size):
             
-        except Exception as e:
-            print(f"Error processing image: {e}")
-            sys.exit()
-    else:
-        print(f"Error fetching map image: {response.status_code} - {response.text}")
-        sys.exit()
+            TILE_SIZE = 256
+            scale = 2 ** zoom  # 줌 레벨에 따른 스케일
+
+            # 경도를 픽셀로 변환
+            def lng_to_pixel_x(lng):
+                return (lng + 180) / 360 * scale * TILE_SIZE
+
+            # 위도를 픽셀로 변환 (머케이터 도법)
+            def lat_to_pixel_y(lat):
+                siny = math.sin(lat * math.pi / 180)
+                y = math.log((1 + siny) / (1 - siny))
+                return (1 - y / (2 * math.pi)) * scale * TILE_SIZE / 2
+
+            # 지도 중심 좌표의 픽셀 좌표 구하기
+            center_x = lng_to_pixel_x(center_lng)
+            center_y = lat_to_pixel_y(center_lat)
+
+            # 주어진 좌표의 픽셀 좌표 구하기
+            pixel_x = lng_to_pixel_x(lng) - center_x + map_size[0] // 2
+            pixel_y = lat_to_pixel_y(lat) - center_y + map_size[1] // 2
+
+            # 창 크기 대비 지도 크기에 따른 비율로 스케일링
+            scale_x = window_size[0] / map_size[0]
+            scale_y = window_size[1] / map_size[1]
+
+            # Pygame 창 상의 픽셀 좌표로 변환
+            pixel_x_on_window = int(pixel_x * scale_x)
+            pixel_y_on_window = int(pixel_y * scale_y)
+
+            return pixel_x_on_window, pixel_y_on_window
+        
+
+        self.latitiude = self.atm_lat
+        self.longitude = self.atm_long
 
         
+        # test
+        ##
+        radar_x, radar_y = latlng_to_pixel(self.latitiude, self.longitude, LAT_LANDMARK, LON_LANDMARK, 18, (640, 640), (center_x*2, center_y*2))
+    
+
+        self.radar_diff_x = radar_x - center_x
+        self.radar_diff_y = radar_y - center_y 
+        self.center_x = center_x
+        self.center_y = center_y
+        self.radar_posx = radar_x
+        self.radar_posy = radar_y    
          
 
-def get_static_map_url(center_lat, center_lng, width, height, zoom=18, maptype='satellite'):
-    return f"https://maps.googleapis.com/maps/api/staticmap?center={center_lat},{center_lng}&zoom={zoom}&size={width}x{height}&maptype={maptype}&key={API_KEY}"
-
-def fetch_map_image(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        return Image.open(BytesIO(response.content))
-    else:
-        print("Error fetching map image:", response.status_code, response.text)
-        return None
     
 def meters_to_pixels(meters, lat, zoom, map_size, window_size):
 
