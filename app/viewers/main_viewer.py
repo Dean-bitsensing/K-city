@@ -36,8 +36,8 @@ class MainViewer:
         # self.radar_postions.draw_vision_object()
         self.radar_postions.draw_fusion_object()
         
-        self.model.cam_bound_model.cam_list_load(self.model.logging_data)
-        self.model.cam_bound_model.render_cams(self.screen, self.model.logging_data)
+        self.model.cam_bound_model.cam_list_load(self.model.intersections)
+        self.model.cam_bound_model.render_cams(self.screen, self.model.intersections)
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
         if self.model.cam_bound_model.is_zoom():
@@ -189,23 +189,23 @@ class MultipleRadarPositionView:
         
         
     def draw_radar_positions(self):
-        
-        for data in self.model.logging_data:
-            radar_posx = data.current_scan_data.radar_posx
-            radar_posy = data.current_scan_data.radar_posy
-            if data.selected == False:
-                pygame.draw.circle(self.screen, data.current_scan_data.color, (radar_posx, radar_posy), 5, 0)
-            else:
-                pygame.draw.circle(self.screen, (0,0,0), (radar_posx, radar_posy), 5, 0)
-            font = pygame.font.Font(None, 20)
-            text = font.render(data.ip, True, self.model.cam_bound_model.cam_ip_box_color)  # 렌더링할 텍스트와 색상
-            text_rect = text.get_rect()
+        for intersection in self.model.intersections:
+            for atm in intersection.atms:
+                radar_posx = atm.current_scan_data.radar_posx
+                radar_posy = atm.current_scan_data.radar_posy
+                if atm.selected == False:
+                    pygame.draw.circle(self.screen, atm.color, (radar_posx, radar_posy), 5, 0)
+                else:
+                    pygame.draw.circle(self.screen, (0,0,0), (radar_posx, radar_posy), 5, 0)
+                font = pygame.font.Font(None, 20)
+                text = font.render(atm.ip, True, self.model.cam_bound_model.cam_ip_box_color)  # 렌더링할 텍스트와 색상
+                text_rect = text.get_rect()
 
-            # 텍스트 위치 설정 (원 아래)
-            text_rect.center = (radar_posx, radar_posy + 10)  # 원 아래로 10 픽셀만큼 떨어뜨림
+                # 텍스트 위치 설정 (원 아래)
+                text_rect.center = (radar_posx, radar_posy + 10)  # 원 아래로 10 픽셀만큼 떨어뜨림
 
-            # 텍스트 화면에 표시
-            self.screen.blit(text, text_rect)
+                # 텍스트 화면에 표시
+                self.screen.blit(text, text_rect)
     
     def draw_vision_object(self):
         
@@ -230,25 +230,26 @@ class MultipleRadarPositionView:
                 # pygame.draw.polygon(self.screen, data.color, polygon_pos, 2) # vision object square box
 
     def draw_fusion_object(self):
-        for data in self.model.logging_data:
-            for fobj in data.current_scan_data.fusion_object_data:
-                if not self.check_in_grid_window(fobj.trns_posx, fobj.trns_posy):
-                    continue
-                if fobj.id in data.selected_fobj_id:
-                    pygame.draw.circle(self.screen, (0,0,0), (fobj.trns_posx, fobj.trns_posy), 2, 0)
-                    pygame.draw.circle(self.screen, (250,250,250), (fobj.trns_posx, fobj.trns_posy), 3, 1)
-                else:
-                    pygame.draw.circle(self.screen, data.current_scan_data.color, (fobj.trns_posx, fobj.trns_posy), 2, 0)
-                # pygame.draw.line(self.screen, data.speed_color, (fobj.posx, fobj.posy), (fobj.velx + fobj.posx, fobj.vely + fobj.posy), 1)
-                # pygame.draw.circle(self.screen, RED, (fobj.velx, fobj.vely), 2, 0)
-                polygon_pos = [
-                    fobj.dl_pos,
-                    
-                    fobj.ul_pos,
-                    fobj.ur_pos,
-                    fobj.dr_pos,
-                ]
-                pygame.draw.polygon(self.screen, data.current_scan_data.color, polygon_pos, 2) # vision object square box
+        for intersection in self.model.intersections:
+            for atm in intersection.atms:
+                for fobj in atm.current_scan_data.fusion_object_data:
+                    if not self.check_in_grid_window(fobj.trns_posx, fobj.trns_posy):
+                        continue
+                    if fobj.id in atm.selected_fobj_id:
+                        pygame.draw.circle(self.screen, (0,0,0), (fobj.trns_posx, fobj.trns_posy), 2, 0)
+                        pygame.draw.circle(self.screen, (250,250,250), (fobj.trns_posx, fobj.trns_posy), 3, 1)
+                    else:
+                        pygame.draw.circle(self.screen, atm.color, (fobj.trns_posx, fobj.trns_posy), 2, 0)
+                    # pygame.draw.line(self.screen, data.speed_color, (fobj.posx, fobj.posy), (fobj.velx + fobj.posx, fobj.vely + fobj.posy), 1)
+                    # pygame.draw.circle(self.screen, RED, (fobj.velx, fobj.vely), 2, 0)
+                    polygon_pos = [
+                        fobj.dl_pos,
+                        
+                        fobj.ul_pos,
+                        fobj.ur_pos,
+                        fobj.dr_pos,
+                    ]
+                    pygame.draw.polygon(self.screen, atm.color, polygon_pos, 2) # vision object square box
 
     
 class DataInfoWindowView:

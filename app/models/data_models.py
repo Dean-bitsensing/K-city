@@ -1,4 +1,5 @@
-from data_class_models import *
+from .data_class_models import *
+from .colors import *
 import h5py, json
 import numpy as np
 import math
@@ -7,15 +8,19 @@ import sys
 import requests
 from io import BytesIO
 from PIL import Image
-from global_variables import *
-from colors import *
 
 
-class Intersection:
-    def __init__(self, config : dict, intersection_name : str):
-        self.color_set = (BLUE, GREEN, RED, YELLOW,BLUE, GREEN, RED, YELLOW)
+
+class Intersection():
+    def __init__(self, config : dict, intersection_name : str, overall_landmark : tuple): # config = config['verona']['intersection_name']
+        self.color_set = (BLUE, GREEN, RED, YELLOW, PINK, INDIGO, RED, YELLOW)
         self.h5_files = []
         self.atms = []
+
+        self.overall_landmark = overall_landmark # [0] : lat, [1] : long
+        self.landmark = overall_landmark
+       
+         
         ###need to be reafactorized
         self.config = config
         self.name = intersection_name
@@ -32,19 +37,25 @@ class Intersection:
 
     def set_atms(self):
         for idx, h5_file in enumerate(self.h5_files):
-
-            lat = self.config['lat']
-            long = self.config['long']
-            azi_angle = self.config['azi_angle']
+            ip = h5_file.split('_')[-1][:-3]
+            lat = self.config['radar_gps_'+ip][0]
+            long = self.config['radar_gps_'+ip][1]
+            azi_angle = self.config['radar_azi_angle_'+ip]
             atm_color = self.color_set[idx]
 
-            atm = Atm(lat, long, azi_angle, atm_color, h5_file)
+            #TODO should be removed
+            if ip[-2] == '1':
+                atm_color = INDIGO
+            atm = Atm(lat, long, azi_angle, atm_color, h5_file, self.landmark)
 
             self.atms.append(atm)
 
+    # def change_landmark(self):
+    #     self.landmark = 
+
 
 class Atm(Intersection):
-    def __init__(self, lat, long, azi_angle, atm_color,logging_data_path):
+    def __init__(self, lat, long, azi_angle, atm_color, logging_data_path, landmark):
         self.logging_data_path = logging_data_path
         self.logging_data = h5py.File(logging_data_path)
         self.ip = logging_data_path.split('_')[-1][:-3]
@@ -53,15 +64,17 @@ class Atm(Intersection):
         self.atm_lat = lat
         self.atm_long = long
         self.atm_azi_angle = azi_angle
+        self.landmark = landmark
         self.color = atm_color
 
+        self.selected = False
         self.selected_vobj_id = []
         self.selected_fobj_id = []
-        self.config
+        # self.config = 
 
     def get_scan_data(self, current_scan, center_x, center_y):
 
-        current_scan_data = ScanData(current_scan)
+        current_scan_data = ScanData(current_scan, self.logging_data, self.atm_lat, self.atm_long, self.atm_azi_angle, self.landmark)
         
         current_scan_data.parsing_status()
         current_scan_data.parsing_gps_into_meter(center_x,center_y)
@@ -73,9 +86,14 @@ class Atm(Intersection):
     
 
 class ScanData(Atm):
-    def __init__(self,current_scan):
+    def __init__(self,current_scan, logging_data, lat, long, atm_azi_angle, landmark):
         self.current_scan = current_scan
+        self.logging_data = logging_data
         self.current_scan_data = self.logging_data['SCAN_{:05d}'.format(current_scan)]
+        self.atm_lat = lat
+        self.atm_long = long
+        self.atm_azi_angle = atm_azi_angle
+        self.landmark = landmark
 
     def parsing_status(self):
         status_data = self.current_scan_data['Status'][:]
@@ -145,21 +163,21 @@ class ScanData(Atm):
 
             
             
-            posx = meters_to_pixels(posx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            posy = meters_to_pixels(posy, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            posx = meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            posy = meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
             
-            ul_pos[0] = meters_to_pixels(ul_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[1] = meters_to_pixels(ul_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[0] = meters_to_pixels(ul_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[1] = meters_to_pixels(ul_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
-            ur_pos[0] = meters_to_pixels(ur_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[1] = meters_to_pixels(ur_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[0] = meters_to_pixels(ur_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[1] = meters_to_pixels(ur_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
 
-            dl_pos[0] = meters_to_pixels(dl_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[1] = meters_to_pixels(dl_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[0] = meters_to_pixels(dl_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[1] = meters_to_pixels(dl_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
-            dr_pos[0] = meters_to_pixels(dr_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[1] = meters_to_pixels(dr_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[0] = meters_to_pixels(dr_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[1] = meters_to_pixels(dr_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
             ul_pos = tf(ul_pos, transition_matrix, transition_matrix2)
             ur_pos = tf(ur_pos, transition_matrix, transition_matrix2)
@@ -189,7 +207,7 @@ class ScanData(Atm):
         self.vision_object_data = []
         self.vision_object_data_vel = []
 
-        self.azi_theta = self.atm_data.atm_azi_angle
+        self.azi_theta = self.atm_azi_angle
 
         azi_theta = self.azi_theta * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
 
@@ -243,18 +261,18 @@ class ScanData(Atm):
             vely = vobj[14]
             velx = -velx
             
-            posx = meters_to_pixels(posx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            posy = meters_to_pixels(posy, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            posx = meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            posy = meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
             
-            ul_pos[0] = meters_to_pixels(ul_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[1] = meters_to_pixels(ul_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[0] = meters_to_pixels(ul_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[1] = meters_to_pixels(ul_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
-            ur_pos[0] = meters_to_pixels(ur_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[1] = meters_to_pixels(ur_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[0] = meters_to_pixels(dl_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[1] = meters_to_pixels(dl_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[0] = meters_to_pixels(dr_pos[0], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[1] = meters_to_pixels(dr_pos[1], LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[0] = meters_to_pixels(ur_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[1] = meters_to_pixels(ur_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[0] = meters_to_pixels(dl_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[1] = meters_to_pixels(dl_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[0] = meters_to_pixels(dr_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[1] = meters_to_pixels(dr_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
             ul_pos = tf(ul_pos, transition_matrix, transition_matrix2)
             ur_pos = tf(ur_pos, transition_matrix, transition_matrix2)
@@ -262,8 +280,8 @@ class ScanData(Atm):
             dr_pos = tf(dr_pos, transition_matrix, transition_matrix2)
 
 
-            velx = meters_to_pixels(velx, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
-            vely = meters_to_pixels(vely, LAT_LANDMARK, 18, (640, 640), (self.center_x*2, self.center_y*2))
+            velx = meters_to_pixels(velx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            vely = meters_to_pixels(vely, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
             
             position = np.array([[posx],[posy],[1]])
             position = np.dot(transition_matrix,position)
@@ -333,7 +351,7 @@ class ScanData(Atm):
         
         # test
         ##
-        radar_x, radar_y = latlng_to_pixel(self.latitiude, self.longitude, LAT_LANDMARK, LON_LANDMARK, 18, (640, 640), (center_x*2, center_y*2))
+        radar_x, radar_y = latlng_to_pixel(self.latitiude, self.longitude, self.landmark[0], self.landmark[1], 18, (640, 640), (center_x*2, center_y*2))
     
 
         self.radar_diff_x = radar_x - center_x
@@ -347,23 +365,23 @@ class ScanData(Atm):
     
 def meters_to_pixels(meters, lat, zoom, map_size, window_size):
 
-            # 지구의 둘레 (Equatorial Circumference) = 40,075km
-            EARTH_RADIUS = 6378137  # meters
+    # 지구의 둘레 (Equatorial Circumference) = 40,075km
+    EARTH_RADIUS = 6378137  # meters
 
-            # 위도를 라디안으로 변환
-            lat_rad = math.radians(lat)
+    # 위도를 라디안으로 변환
+    lat_rad = math.radians(lat)
 
-            # 지도 상에서 한 픽셀당 미터를 계산 (줌 레벨과 위도에 따라 다름)
-            meters_per_pixel = (math.cos(lat_rad) * 2 * math.pi * EARTH_RADIUS) / (2 ** zoom * 256)
+    # 지도 상에서 한 픽셀당 미터를 계산 (줌 레벨과 위도에 따라 다름)
+    meters_per_pixel = (math.cos(lat_rad) * 2 * math.pi * EARTH_RADIUS) / (2 ** zoom * 256)
 
-            # 주어진 미터를 원본 지도 상의 픽셀로 변환
-            pixels = meters / meters_per_pixel
+    # 주어진 미터를 원본 지도 상의 픽셀로 변환
+    pixels = meters / meters_per_pixel
 
-            # 창 크기 대비 지도 크기에 따른 비율로 스케일링
-            scale_x = window_size[0] / map_size[0]
-            scale_y = window_size[1] / map_size[1]
+    # 창 크기 대비 지도 크기에 따른 비율로 스케일링
+    scale_x = window_size[0] / map_size[0]
+    scale_y = window_size[1] / map_size[1]
 
-            # 창에서의 픽셀 크기로 변환
-            pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
+    # 창에서의 픽셀 크기로 변환
+    pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
 
-            return pixels_on_window
+    return pixels_on_window

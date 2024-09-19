@@ -5,34 +5,39 @@ import requests
 from io import BytesIO
 from PIL import Image
 from .window_model import WindowModel
-from.global_variables import *
 from .colors import *
 
 class MapGridModel(WindowModel):
-    def __init__(self, width=1200, length=800):
+    def __init__(self, landmark, width=1200, length=800):
         super().__init__(width, length)
         self.color = (0, 0, 0)
         self.font_color = (0, 0, 0)
         self.font_size = 10
         self.center_point_color = RED
         self.BACKGROUND_IMAGE_PATH = 'app/resources/map_image.png'
+        self.intersection_image_path = 'app/resources/intersection.png'
+        self.start_posx = 0
+        self.start_posy = 0
+        self.landmark = landmark
+
         self.parsing_map()
 
-        self.update()
+        self.update(self.landmark)
 
-    def update(self):
-        self.start_posx = 0
-        self.end_posx = self.GRID_WINDOW_WIDTH
+    def update(self, landmark):
+        
+        self.landmark = landmark
         self.interval_x = int(self.GRID_X_SIZE)
-        self.start_posy = 0
+        self.end_posx = self.GRID_WINDOW_WIDTH
+        
         self.end_posy = self.GRID_WINDOW_LENGTH
         self.interval_y = int(self.GRID_Y_SIZE)
 
     def parsing_map(self):
         if not os.path.exists(self.BACKGROUND_IMAGE_PATH):
             parsing_image_data_from_google(
-                LAT_LANDMARK,
-                LON_LANDMARK,
+                self.landmark[0],
+                self.landmark[1],
                 self.GRID_WINDOW_WIDTH,
                 self.GRID_WINDOW_LENGTH,
                 zoom=18,

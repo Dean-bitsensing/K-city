@@ -14,13 +14,19 @@ from.data_models import *
 class MainModel:
     def __init__(self, config):
 
-        self.view_mode = 0  # 0 : OverAll View , 1 : Intersection View , 2 : ATM View
+        self.view_mode          = 0  # 0 : OverAll View , 1 : Intersection View , 2 : ATM View
+        self.track_mode         = 0  # 0 : Fusion,        1 : Vision,             2 : Radar
 
-        self.config = config
-        self.radar_only_mode = False
-        self.logging_data_num = 0
-        self.logging_data = []
-        self.intersections = []
+        self.config             = config
+        self.logging_data_num   = 0
+        self.logging_data       = []
+        self.intersections      = []
+        self.intersection_num   = config['info']['intersection_num']
+        self.atm_num            = config['info']['atm_num']
+
+        self.lat_landmark   = config['info']['center_gps'][0]
+        self.long_landmark  = config['info']['center_gps'][1]
+        self.landmark = (self.lat_landmark, self.long_landmark)
         self.init_model_class()
 
 
@@ -29,7 +35,7 @@ class MainModel:
             if intersection == 'None':
                 continue
             if intersection != 'info':
-                itsc = Intersection(self.config[intersection], intersection)
+                itsc = Intersection(self.config[intersection], intersection, self.landmark)
                 itsc.initiate()
                 self.intersections.append(itsc)
                 self.logging_data.extend(itsc.h5_files)
@@ -41,14 +47,16 @@ class MainModel:
         self.max_scan = 99999999999
 
         for file in self.logging_data:
-            max = int(file.logging_data['DATA_INFO']['finScan'][()].item())
-            min = int(file.logging_data['DATA_INFO']['initScan'][()].item())
+            file = h5py.File(file, 'r')
+            max = int(file['DATA_INFO']['finScan'][()].item())
+            min = int(file['DATA_INFO']['initScan'][()].item())
 
             if min > self.min_scan:
                 self.min_scan = min
             
             if max < self.max_scan:
                 self.max_scan = max
+            file.close()
     
     def load_data(self, current_scan):
         for intersection in self.intersections:
@@ -57,7 +65,7 @@ class MainModel:
 
     def init_model_class(self):
         self.window_model = WindowModel()
-        self.grid_model = MapGridModel()
+        self.grid_model = MapGridModel(self.landmark)
         self.cam_bound_model = CameraDisplayModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH)
         self.cam_change_left_button_model = CameraLeftButton()
         self.cam_change_right_button_model = CameraRightButton()
@@ -67,8 +75,8 @@ class MainModel:
         
 
     def window_resize(self, width, length):
-        self.window_model = WindowModel(width, length)
-        self.grid_model = MapGridModel(width, length)
+        self.window_model.update(width, length)
+        self.grid_model.update(self.landmark)
         self.cam_bound_model = CameraDisplayModel(width, length)
         self.cam_change_left_button_model = CameraLeftButton(width, length)
         self.cam_change_right_button_model = CameraRightButton(width, length)
@@ -89,21 +97,22 @@ class MainModel:
                     data.selected_vobj_id.append(obj_id)
                     print(f'data : {idx}, list : {data.selected_vobj_id}')      
 
-    def object_matching(self):
-        azi_thetas = [0] * len(self.current_scan_data)
-        for idx, data in enumerate(self.current_scan_data):
-            azi_thetas[idx] = data.azi_theta
+#TODO 살리기
+    # def object_matching(self):
+    #     azi_thetas = [0] * len(self.logging_data)
+    #     for idx, data in enumerate(self.current_scan_data):
+    #         azi_thetas[idx] = data.azi_theta
         
-        print(azi_thetas)
-        selected_list = []
+    #     print(azi_thetas)
+    #     selected_list = []
 
-        for idx, data in enumerate(self.current_scan_data):
-            print(idx)
-            for vobj in data.vision_object_data:
-                if vobj.selected:
-                    selected_list.append((vobj.posx, vobj.posy))
+    #     for idx, data in enumerate(self.current_scan_data):
+    #         print(idx)
+    #         for vobj in data.vision_object_data:
+    #             if vobj.selected:
+    #                 selected_list.append((vobj.posx, vobj.posy))
 
-        print(selected_list)
+    #     print(selected_list)
 
         # 각도 돌리기
         # 돌릴때마다 거리 비교
