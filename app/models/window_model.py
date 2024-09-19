@@ -31,9 +31,9 @@ class WindowModel(Observable):
         self.SPLITED_SCALE_RATE = 0.75
         self.SPLITED_SCALE_RATE_X = self.SCALED_RATE_X*self.SPLITED_SCALE_RATE
         
-        self.update_sizes()
+        self.initialize_window_size()
 
-    def update_sizes(self):
+    def initialize_window_size(self):
         self.GRID_WINDOW_WIDTH          = int(self.WINDOW_WIDTH*3/5)
         self.GRID_WINDOW_LENGTH         = int(self.WINDOW_LENGTH * 9 / 10)
         self.HALF_GRID_WINDOW_WIDTH     = int(self.GRID_WINDOW_WIDTH // 2)
@@ -54,7 +54,7 @@ class WindowModel(Observable):
     def update(self, width, length):
         self.WINDOW_WIDTH = width
         self.WINDOW_LENGTH = length
-        self.update_sizes()
+        self.initialize_window_size()
 
 class GridModel(WindowModel):
     def __init__(self, width=1200, length=800):
@@ -171,7 +171,7 @@ class CamBoundModel(WindowModel):
             screen.blit(image, pos)
             pygame.draw.rect(screen, color, rect, 2)
             screen.blit(myText, pos)
-            self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width, self.length), pos, color)
+            self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width, self.length), pos)
         else:
             # Render all images at their normal size
             for cam, pos, ip, color, idx in zip(cams, positions, ips, colors, cam_indices):
@@ -185,9 +185,9 @@ class CamBoundModel(WindowModel):
                 screen.blit(image, pos)
                 pygame.draw.rect(screen, color, rect, 2)
                 screen.blit(myText, pos)
-                self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width/2, self.length/2), pos, color)
+                self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width/2, self.length/2), pos)
 
-    def render_bbox(self, screen, vision_object_data, idicies, image_size, cam_position, color):
+    def render_bbox(self, screen, vision_object_data, idicies, image_size, cam_position):
         origin_size = (1024, 576)
         
         width_scale = image_size[0]/origin_size[0]
@@ -205,7 +205,7 @@ class CamBoundModel(WindowModel):
             bbox_length = int(width_scale * bbox_length)
 
             rect = pygame.Rect(bbox_posx, bbox_posy, bbox_width, bbox_length)
-            pygame.draw.rect(screen, color, rect, 1)
+            pygame.draw.rect(screen, YELLOW, rect, 2)
 
 
 
