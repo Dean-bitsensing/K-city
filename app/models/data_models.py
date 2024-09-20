@@ -9,12 +9,21 @@ import requests
 from io import BytesIO
 from PIL import Image
 
+######## Data Models ########
 
+
+# Intersection 
 
 class Intersection():
     def __init__(self, config : dict, intersection_name : str, overall_landmark : tuple): # config = config['verona']['intersection_name']
         
+        # Set color set to differenciate ATMs
+
         self.color_set = (BLUE, SKYBLUE, RED, YELLOW, PINK, INDIGO, RED, YELLOW)
+
+
+        # Set list to take multiple h5 files and ATMs
+
         self.h5_files = []
         self.atms = []
 
@@ -25,6 +34,9 @@ class Intersection():
         ###need to be reafactorized
         self.config = config
         self.name = intersection_name
+
+
+        # Set Parameter to check if this intersection is clicked
 
         self.is_clicked = False
 
@@ -51,16 +63,25 @@ class Intersection():
 
             self.atms.append(atm)
 
-    # def change_landmark(self):
-    #     self.landmark = 
+    def set_intersection_center_gps(self):
+        self.intersection_lat = self.config['center_gps'][0]
+        self.intersection_long = self.config['center_gps'][1]
 
+
+# ATM
 
 class Atm(Intersection):
     def __init__(self, lat, long, azi_angle, atm_color, logging_data_path, landmark, intersection):
+
+        # set IP and Intersection number according to file_path
+
         self.logging_data_path = logging_data_path
         self.logging_data = h5py.File(logging_data_path)
         self.ip = logging_data_path.split('_')[-1][:-3]
         self.intersection_number = int(self.ip.split('.')[-1])//10
+
+
+        # set ATM's Latitude, Longitude, Color and Angle that ATM is currently watching oriented from config file
 
         self.atm_lat = lat
         self.atm_long = long
@@ -71,6 +92,9 @@ class Atm(Intersection):
         self.intersection = intersection
 
 
+
+        # set initial value of list used to get obj info individually
+
         self.selected = False
         self.selected_vobj_id = []
         self.selected_fobj_id = []
@@ -80,14 +104,19 @@ class Atm(Intersection):
 
         current_scan_data = ScanData(current_scan, self)
         
-        current_scan_data.parsing_status()
-        current_scan_data.parsing_gps_into_meter(center_x,center_y)
-        current_scan_data.parsing_fusion_object_data()
-        current_scan_data.parsing_vision_object_data()
-        current_scan_data.parsing_image()
+        #current_scan_data.parsing_status() -> TODO: if gps coordinates become more accurate then will use sensor info 
+
+        current_scan_data.parsing_gps_into_meter(center_x,center_y)     # 1. gps coordinate to pygame pixel coordinate 
+        current_scan_data.parsing_fusion_object_data()                  # 2. parse fusion obj from h5 and change it to world coordinate
+        current_scan_data.parsing_vision_object_data()                  # 3. parse vision obj from h5 and change it to world coordinate
+        # current_scan_data.parsing_radar_object_data()                 # 4. parse radar obj from h5 and change it to world coordinate -> TODO
+        current_scan_data.parsing_image()                               # 5. parse image from h5 
 
         self.current_scan_data = current_scan_data
     
+
+
+#Scan Data per ATM 
 
 class ScanData(Atm):
     def __init__(self,current_scan, atm):
@@ -367,6 +396,18 @@ class ScanData(Atm):
         self.radar_posy = radar_y    
          
 
+
+### Calculation Functions ###
+
+def tf(pos : tuple, transition_matrix : list , transition_matrix2 : list):
+            
+            position = np.array([[pos[0]],[pos[1]],[1]])
+            position = np.dot(transition_matrix,position)
+            position = np.dot(transition_matrix2, position)
+            pos[0] = position[0][0]
+            pos[1] = position[1][0]
+
+            return pos
     
 def meters_to_pixels(meters, lat, zoom, map_size, window_size):
 
