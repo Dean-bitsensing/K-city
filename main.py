@@ -1,6 +1,5 @@
 import pygame
 from app import *
-from config import *
 import yaml
 
 def load_config():

@@ -63,6 +63,8 @@ class MainModel:
             for atm in intersection.atms:
                 atm.get_scan_data(current_scan, self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
 
+
+
     def init_model_class(self):
         self.window_model = WindowModel()
         self.grid_model = MapGridModel(self.landmark)

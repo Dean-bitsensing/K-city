@@ -13,7 +13,8 @@ from PIL import Image
 
 class Intersection():
     def __init__(self, config : dict, intersection_name : str, overall_landmark : tuple): # config = config['verona']['intersection_name']
-        self.color_set = (BLUE, GREEN, RED, YELLOW, PINK, INDIGO, RED, YELLOW)
+        
+        self.color_set = (BLUE, SKYBLUE, RED, YELLOW, PINK, INDIGO, RED, YELLOW)
         self.h5_files = []
         self.atms = []
 
@@ -46,7 +47,7 @@ class Intersection():
             #TODO should be removed
             if ip[-2] == '1':
                 atm_color = INDIGO
-            atm = Atm(lat, long, azi_angle, atm_color, h5_file, self.landmark)
+            atm = Atm(lat, long, azi_angle, atm_color, h5_file, self.landmark, self)
 
             self.atms.append(atm)
 
@@ -55,7 +56,7 @@ class Intersection():
 
 
 class Atm(Intersection):
-    def __init__(self, lat, long, azi_angle, atm_color, logging_data_path, landmark):
+    def __init__(self, lat, long, azi_angle, atm_color, logging_data_path, landmark, intersection):
         self.logging_data_path = logging_data_path
         self.logging_data = h5py.File(logging_data_path)
         self.ip = logging_data_path.split('_')[-1][:-3]
@@ -67,6 +68,9 @@ class Atm(Intersection):
         self.landmark = landmark
         self.color = atm_color
 
+        self.intersection = intersection
+
+
         self.selected = False
         self.selected_vobj_id = []
         self.selected_fobj_id = []
@@ -74,7 +78,7 @@ class Atm(Intersection):
 
     def get_scan_data(self, current_scan, center_x, center_y):
 
-        current_scan_data = ScanData(current_scan, self.logging_data, self.atm_lat, self.atm_long, self.atm_azi_angle, self.landmark)
+        current_scan_data = ScanData(current_scan, self)
         
         current_scan_data.parsing_status()
         current_scan_data.parsing_gps_into_meter(center_x,center_y)
@@ -86,14 +90,15 @@ class Atm(Intersection):
     
 
 class ScanData(Atm):
-    def __init__(self,current_scan, logging_data, lat, long, atm_azi_angle, landmark):
+    def __init__(self,current_scan, atm):
+        self.atm = atm
         self.current_scan = current_scan
-        self.logging_data = logging_data
+        self.logging_data = self.atm.logging_data
         self.current_scan_data = self.logging_data['SCAN_{:05d}'.format(current_scan)]
-        self.atm_lat = lat
-        self.atm_long = long
-        self.atm_azi_angle = atm_azi_angle
-        self.landmark = landmark
+        self.atm_lat = self.atm.atm_lat
+        self.atm_long = self.atm.atm_long
+        self.atm_azi_angle = self.atm.atm_azi_angle
+        self.landmark = self.atm.landmark
 
     def parsing_status(self):
         status_data = self.current_scan_data['Status'][:]
