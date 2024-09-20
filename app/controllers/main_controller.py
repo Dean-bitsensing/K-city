@@ -131,6 +131,30 @@ class MainController:
                         print(f'atm_long      : {atm.atm_long}')
                         print(f'atm_azi_angle : {atm.atm_azi_angle}')
 
+        elif event.key == pygame.K_F2:
+            self.model.view_mode[0] = 1
+            
+            self.model.landmark[0] = self.model.config['esterno']['intersection_center_gps'][0]
+            self.model.landmark[1] = self.model.config['esterno']['intersection_center_gps'][1]
+            self.model.landmark[2] = self.model.config['esterno']['intersection_map_zoom']
+            self.model.grid_model.parsing_map()
+        elif event.key == pygame.K_F1:
+            self.model.view_mode[0] = 0
+            
+            self.model.landmark[0] = self.model.config['info']['center_gps'][0]
+            self.model.landmark[1] = self.model.config['info']['center_gps'][1]
+            self.model.landmark[2] = self.model.config['info']['map_zoom']
+            self.model.grid_model.parsing_map()
+
+        elif event.key == pygame.K_F3:
+            self.model.view_mode[0] = 2
+            
+            self.model.landmark[0] = self.model.config['interno']['intersection_center_gps'][0]
+            self.model.landmark[1] = self.model.config['interno']['intersection_center_gps'][1]
+            self.model.landmark[2] = self.model.config['interno']['intersection_map_zoom']
+            self.model.grid_model.parsing_map()
+
+
     def handle_mouse_left_click(self, mouse_pos):
         # Check if left or right buttons are clicked
         if self.model.cam_change_left_button_model.is_clicked(mouse_pos):

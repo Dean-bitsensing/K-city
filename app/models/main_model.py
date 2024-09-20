@@ -15,8 +15,8 @@ from scipy.optimize import minimize
 class MainModel:
     def __init__(self, config):
 
-        self.view_mode          = 0  # 0 : OverAll View , 1 : Intersection View , 2 : ATM View
-        self.track_mode         = 0  # 0 : Fusion,        1 : Vision,             2 : Radar
+        self.view_mode          = [0]  # 0 : OverAll View , 1 : Intersection View , 2 : ATM View
+        self.track_mode         = [0]  # 0 : Fusion,        1 : Vision,             2 : Radar
 
         self.config             = config
         self.logging_data_num   = 0
@@ -27,7 +27,11 @@ class MainModel:
 
         self.lat_landmark   = config['info']['center_gps'][0]
         self.long_landmark  = config['info']['center_gps'][1]
-        self.landmark = (self.lat_landmark, self.long_landmark)
+        self.map_zoom = config['info']['map_zoom'] # TODO 필요하면 config로 바꾸기?
+        
+        self.landmark = [self.lat_landmark, self.long_landmark, self.map_zoom]
+        
+
         self.init_model_class()
 
 
@@ -68,7 +72,7 @@ class MainModel:
 
     def init_model_class(self):
         self.window_model = WindowModel()
-        self.grid_model = MapGridModel(self.landmark)
+        self.grid_model = MapGridModel(self.landmark, self.view_mode)
         self.cam_bound_model = CameraDisplayModel(self.window_model.WINDOW_WIDTH, self.window_model.WINDOW_LENGTH)
         self.cam_change_left_button_model = CameraLeftButton()
         self.cam_change_right_button_model = CameraRightButton()

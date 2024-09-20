@@ -8,18 +8,23 @@ from .window_model import WindowModel
 from .colors import *
 
 class MapGridModel(WindowModel):
-    def __init__(self, landmark, width=1200, length=800):
+    def __init__(self, landmark, view_mode, width=1200, length=800):
         super().__init__(width, length)
         self.color = (0, 0, 0)
         self.font_color = (0, 0, 0)
         self.font_size = 10
         self.center_point_color = RED
-        self.BACKGROUND_IMAGE_PATH = 'app/resources/map_image.png'
-        self.intersection_image_path = 'app/resources/intersection.png'
+        
+        self.overall_map_image_path = 'app/resources/map_image.png'
+        self.intersection1_image_path = 'app/resources/intersection1.png'
+        self.intersection2_image_path = 'app/resources/intersection2.png'
+        self.BACKGROUND_IMAGE_PATH = self.overall_map_image_path
+
         self.start_posx = 0
         self.start_posy = 0
         self.landmark = landmark
-
+        self.view_mode = view_mode
+        
         self.parsing_map()
 
         self.update(self.landmark, width, length)
@@ -34,15 +39,23 @@ class MapGridModel(WindowModel):
         self.interval_y = int(self.GRID_Y_SIZE)
 
     def parsing_map(self):
-        if not os.path.exists(self.BACKGROUND_IMAGE_PATH):
+        if self.view_mode[0] == 0:
+            image_path = self.overall_map_image_path
+        elif self.view_mode[0] == 1:
+            image_path = self.intersection1_image_path
+        elif self.view_mode[0] == 2:
+            image_path = self.intersection2_image_path
+            
+        self.BACKGROUND_IMAGE_PATH = image_path
+        if not os.path.exists(image_path):
             parsing_image_data_from_google(
                 self.landmark[0],
                 self.landmark[1],
                 self.GRID_WINDOW_WIDTH,
                 self.GRID_WINDOW_LENGTH,
-                zoom=18,
+                zoom=self.landmark[2],
                 maptype='satellite',
-                image_path=self.BACKGROUND_IMAGE_PATH
+                image_path=image_path
             )
 
 
@@ -78,7 +91,7 @@ def parsing_image_data_from_google(center_lat, center_lng, grid_width, grid_heig
         sys.exit()
 
 def get_static_map_url(center_lat, center_lng, width, height, zoom=18, maptype='satellite'):
-    return f"https://maps.googleapis.com/maps/api/staticmap?center={center_lat},{center_lng}&zoom={zoom}&size={width}x{height}&maptype={maptype}&key={API_KEY}"
+    return f"https://maps.googleapis.com/maps/api/staticmap?center={center_lat},{center_lng}&zoom={zoom}&size={width}x{height}&maptype={maptype}&key={'AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw'}"
 
 def fetch_map_image(url):
     response = requests.get(url)

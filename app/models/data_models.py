@@ -15,7 +15,7 @@ from PIL import Image
 # Intersection 
 
 class Intersection():
-    def __init__(self, config : dict, intersection_name : str, overall_landmark : tuple): # config = config['verona']['intersection_name']
+    def __init__(self, config : dict, intersection_name : str, landmark : tuple): # config = config['verona']['intersection_name']
         
         # Set color set to differenciate ATMs
 
@@ -27,8 +27,8 @@ class Intersection():
         self.h5_files = []
         self.atms = []
 
-        self.overall_landmark = overall_landmark # [0] : lat, [1] : long
-        self.landmark = overall_landmark
+        self.landmark = landmark # [0] : lat, [1] : long
+        
        
          
         ###need to be reafactorized
@@ -217,21 +217,22 @@ class ScanData(Atm):
                                       [math.sin(heading_angle_rad), math.cos(heading_angle_rad), 0],
                                       [0,0,1]])
             
-            posx = meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            posy = meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # self.landmark[0] : landmark lat, self.landmark[1] : landmark long, self.landmark[2] : map zoom
+            posx = meters_to_pixels(posx, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            posy = meters_to_pixels(posy, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
             
-            ul_pos[0] = meters_to_pixels(ul_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[1] = meters_to_pixels(ul_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[0] = meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[1] = meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
 
-            ur_pos[0] = meters_to_pixels(ur_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[1] = meters_to_pixels(ur_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[0] = meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[1] = meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
 
 
-            dl_pos[0] = meters_to_pixels(dl_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[1] = meters_to_pixels(dl_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[0] = meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[1] = meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
 
-            dr_pos[0] = meters_to_pixels(dr_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[1] = meters_to_pixels(dr_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[0] = meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[1] = meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
 
             new_fobj.before_posx = posx
             new_fobj.before_posy = posy
@@ -406,7 +407,7 @@ class ScanData(Atm):
         
         # test
         ##
-        radar_x, radar_y = latlng_to_pixel(self.latitiude, self.longitude, self.landmark[0], self.landmark[1], 18, (640, 640), (center_x*2, center_y*2))
+        radar_x, radar_y = latlng_to_pixel(self.latitiude, self.longitude, self.landmark[0], self.landmark[1], self.landmark[2], (640, 640), (center_x*2, center_y*2))
     
 
         self.radar_diff_x = radar_x - center_x

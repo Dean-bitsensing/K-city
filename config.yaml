@@ -50,8 +50,8 @@ verona :
   esterno : #밑에 교차로 S5 ~ S10
     atm_nun: 6
     folder_path : 'D:\k-city\good_verona\datas\esterno'
-    intersection_map_zoom : 20
-    intersection_center_gps : [0,0]
+    intersection_map_zoom : 19
+    intersection_center_gps : [45.4305233, 10.9877399]
     radar_gps_1.0.0.20 : [45.4307813, 10.9878318]
     radar_gps_1.0.0.21 : [45.430319, 10.9883385]
     radar_gps_1.0.0.22 : [45.4301545, 10.9879317]
@@ -69,8 +69,8 @@ verona :
   interno : #위에 교차로 S1 ~ S4
     atm_nun: 4
     folder_path : 'D:\k-city\good_verona\datas\interno'
-    intersection_map_zoom : 20
-    intersection_center_gps : [0,0]
+    intersection_map_zoom : 19
+    intersection_center_gps : [45.4316523, 10.9882510]
     radar_gps_1.0.0.10 : [45.4317387, 10.9882638]
     radar_gps_1.0.0.11 : [45.4316862, 10.9886965]
     radar_gps_1.0.0.12 : [45.4316862, 10.9886965]
