@@ -7,9 +7,10 @@ class InfoWindowModel(WindowModel):
         super().__init__(width, length)
         self.color = (100, 100, 100)
         self.font_color = (200, 200, 200)
-        self.update()
+        self.update(width, length)
 
-    def update(self):
+    def update(self, width, length):
+        super().__init__(width, length)
         self.posx = self.DATA_INFO_X
         self.posy = self.DATA_INFO_Y
         self.width = self.DATA_INFO_WIDTH

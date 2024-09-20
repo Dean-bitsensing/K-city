@@ -84,6 +84,10 @@ class Atm(Intersection):
 
         self.current_scan_data = current_scan_data
     
+    def clear_selected_obj_id(self):
+        self.selected = False
+        self.selected_vobj_id = []
+        self.selected_fobj_id = []
 
 class ScanData(Atm):
     def __init__(self,current_scan, logging_data, lat, long, atm_azi_angle, landmark):

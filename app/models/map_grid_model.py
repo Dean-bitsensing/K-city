@@ -22,10 +22,10 @@ class MapGridModel(WindowModel):
 
         self.parsing_map()
 
-        self.update(self.landmark)
+        self.update(self.landmark, width, length)
 
-    def update(self, landmark):
-        
+    def update(self, landmark, width, length):
+        super().__init__(width, length)
         self.landmark = landmark
         self.interval_x = int(self.GRID_X_SIZE)
         self.end_posx = self.GRID_WINDOW_WIDTH

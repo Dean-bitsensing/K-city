@@ -21,7 +21,7 @@ class CameraDisplayModel(WindowModel):
         self.cam_bbox_mode = 1
         self.cam_ip_box_color = RED
         self.zoom_init()
-        self.update()
+        self.update(width, length)
 
     def cam_list_load(self, intersections):
         self.cam_list = []
@@ -38,7 +38,8 @@ class CameraDisplayModel(WindowModel):
                 # self.cam_data_list.append(img)
                 # self.cam_color.append(color)
 
-    def update(self):
+    def update(self, width, length):
+        super().__init__(width, length)
         self.posx = self.CAM_BOUND_X
         self.posy = self.CAM_BOUND_Y
         self.width = int(self.WINDOW_WIDTH - self.CAM_BOUND_X)
