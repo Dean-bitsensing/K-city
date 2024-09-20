@@ -1,48 +1,34 @@
-# models/map_grid_model.py
 import os
 import sys
 import requests
 from io import BytesIO
 from PIL import Image
-from .window_model import WindowModel
-from.global_variables import *
-from .colors import *
 
-class MapGridModel(WindowModel):
-    def __init__(self, width=1200, length=800):
-        super().__init__(width, length)
-        self.color = (0, 0, 0)
-        self.font_color = (0, 0, 0)
-        self.font_size = 10
-        self.center_point_color = RED
-        self.BACKGROUND_IMAGE_PATH = 'app/resources/map_image.png'
-        self.parsing_map()
+class MapModel:
+    def __init__(self, config, window_width, window_length):
+        self.config = config
+        self.window_width = window_width
+        self.window_length = window_length
 
-        self.update()
-
-    def update(self):
-        self.start_posx = 0
-        self.end_posx = self.GRID_WINDOW_WIDTH
-        self.interval_x = int(self.GRID_X_SIZE)
-        self.start_posy = 0
-        self.end_posy = self.GRID_WINDOW_LENGTH
-        self.interval_y = int(self.GRID_Y_SIZE)
-
-    def parsing_map(self):
+    def parsing_map(self, api_key):
         if not os.path.exists(self.BACKGROUND_IMAGE_PATH):
             parsing_image_data_from_google(
                 LAT_LANDMARK,
                 LON_LANDMARK,
-                self.GRID_WINDOW_WIDTH,
-                self.GRID_WINDOW_LENGTH,
+                window_width,
+                window_length,
+                api_key,
                 zoom=18,
                 maptype='satellite',
                 image_path=self.BACKGROUND_IMAGE_PATH
             )
 
 
-def parsing_image_data_from_google(center_lat, center_lng, grid_width, grid_height, zoom, maptype, image_path):
-    map_url = get_static_map_url(center_lat, center_lng, grid_width, grid_height, zoom, maptype)
+####### Calculation Fuction #####
+
+
+def parsing_image_data_from_google(center_lat, center_lng, grid_width, grid_height, api_key,  zoom, maptype, image_path):
+    map_url = get_static_map_url(center_lat, center_lng, grid_width, grid_height, api_key, zoom, maptype)
 
     # 지도 이미지 가져오기
     try:
@@ -72,8 +58,8 @@ def parsing_image_data_from_google(center_lat, center_lng, grid_width, grid_heig
         print(f"Error fetching map image: {response.status_code} - {response.text}")
         sys.exit()
 
-def get_static_map_url(center_lat, center_lng, width, height, zoom=18, maptype='satellite'):
-    return f"https://maps.googleapis.com/maps/api/staticmap?center={center_lat},{center_lng}&zoom={zoom}&size={width}x{height}&maptype={maptype}&key={API_KEY}"
+def get_static_map_url(center_lat, center_lng, width, height, api_key, zoom=18, maptype='satellite'):
+    return f"https://maps.googleapis.com/maps/api/staticmap?center={center_lat},{center_lng}&zoom={zoom}&size={width}x{height}&maptype={maptype}&key={api_key}"
 
 def fetch_map_image(url):
     response = requests.get(url)
@@ -82,4 +68,3 @@ def fetch_map_image(url):
     else:
         print("Error fetching map image:", response.status_code, response.text)
         return None
-    

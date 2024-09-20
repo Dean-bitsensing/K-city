@@ -1,4 +1,4 @@
-from observable import Observable
+from .observable import Observable
 
 class WindowModel(Observable):
     def __init__(self, width=1200, length=800):
