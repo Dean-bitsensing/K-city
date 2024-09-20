@@ -58,7 +58,7 @@ verona :
     radar_gps_1.0.0.23 : [45.4302935, 10.9878867]
     radar_gps_1.0.0.24 : [45.4307873, 10.9877108]
     radar_gps_1.0.0.25 : [45.430359, 10.9882485]
-    radar_azi_angle_1.0.0.20 : 244.71
+    radar_azi_angle_1.0.0.20 : 246.71
     radar_azi_angle_1.0.0.21 : 0
     radar_azi_angle_1.0.0.22 : -27.1
     radar_azi_angle_1.0.0.23 : 20

@@ -21,7 +21,6 @@ class Intersection():
 
         self.color_set = (BLUE, SKYBLUE, RED, YELLOW, PINK, INDIGO, RED, YELLOW)
 
-
         # Set list to take multiple h5 files and ATMs
 
         self.h5_files = []

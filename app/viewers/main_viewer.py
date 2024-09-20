@@ -35,15 +35,18 @@ class MainViewer:
         self.radar_postions.draw_radar_positions()
         # self.radar_postions.draw_vision_object()
         self.radar_postions.draw_fusion_object()
+        self.radar_postions.draw_fusion_object_index()
         
         self.model.cam_bound_model.cam_list_load(self.model.intersections)
         self.model.cam_bound_model.render_cams(self.screen, self.model.intersections)
+        
+
         self.cam_left_button.draw_vision_next_list_button()
         self.cam_right_button.draw_vision_next_list_button()
         if self.model.cam_bound_model.is_zoom():
             self.cam_return_button.draw_return_button()
         self.data_info_window.draw_data_info_window()
-        # self.model.object_matching()
+        
     
 
 class GridView:
@@ -222,7 +225,6 @@ class MultipleRadarPositionView:
                 # pygame.draw.circle(self.screen, RED, (vobj.velx, vobj.vely), 2, 0)
                 polygon_pos = [
                     vobj.dl_pos,
-                    
                     vobj.ul_pos,
                     vobj.ur_pos,
                     vobj.dr_pos,
@@ -251,6 +253,23 @@ class MultipleRadarPositionView:
                     ]
                     pygame.draw.polygon(self.screen, atm.color, polygon_pos, 2) # vision object square box
 
+    def draw_fusion_object_index(self): 
+        font = pygame.font.Font(None, 20)  # 크기 24로 설정
+
+        for intersection in self.model.intersections: # TODO 현재 모든 atm데이터에 대해서 다 그리고 있지만, atm별로 하는 것으로 구분할 필요있음
+            for atm in intersection.atms:
+                for fobj in atm.current_scan_data.fusion_object_data:
+                    if not self.check_in_grid_window(fobj.trns_posx, fobj.trns_posy):
+                        continue
+
+                    id_text = str(fobj.id)  # ID를 문자열로 변환
+                    pos = (fobj.trns_posx, fobj.trns_posy)
+
+                    # 텍스트를 렌더링 (안티앨리어싱: True, 색상: 흰색)
+                    text_surface = font.render(id_text, True, (0, 100, 0))
+
+                    # 텍스트를 pos 위치에 그리기
+                    self.screen.blit(text_surface, pos)
     
 class DataInfoWindowView:
     def __init__(self, model, screen):

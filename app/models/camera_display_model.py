@@ -6,10 +6,11 @@ from .window_model import WindowModel
 from .colors import RED, WHITE, BLACK, YELLOW  # Ensure these are defined
 
 class CamData:
-    def __init__(self, ip, image, color, zoom):
+    def __init__(self, ip, image, color, vision_objects):
         self.ip = ip
         self.image = image
         self.color = color
+        self.vision_objects = vision_objects
         # self.zoom = zoom
 
 class CameraDisplayModel(WindowModel):
@@ -32,8 +33,10 @@ class CameraDisplayModel(WindowModel):
                 fsub = io.BytesIO(image)
                 img = pygame.image.load(fsub, 'jpg')
 
-                cam = CamData(atm.ip, img, atm.color, False)
+                vision_objects = atm.current_scan_data.vision_object_data
+                cam = CamData(atm.ip, img, atm.color, vision_objects)
                 self.cam_list.append(cam)
+
                 # self.cam_ip_list.append(atm.ip)
                 # self.cam_data_list.append(img)
                 # self.cam_color.append(color)
@@ -104,7 +107,8 @@ class CameraDisplayModel(WindowModel):
             pygame.draw.rect(screen, cam.color, rect, 2)
             screen.blit(myText, pos)
             #TODO bbox rendering
-            # self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width, self.length), pos)
+
+            self.render_bbox(screen, cam, idx, (self.width, self.length), pos)
         else:
             # Render all images at their normal size
             for cam, pos, idx in zip(cams, positions, cam_indices):
@@ -119,10 +123,12 @@ class CameraDisplayModel(WindowModel):
                 pygame.draw.rect(screen, cam.color, rect, 2)
                 screen.blit(myText, pos)
                 #TODO bbox
-                # self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width/2, self.length/2), pos)
+                self.render_bbox(screen, cam, idx, (self.width/2, self.length/2), pos)
 
-    def render_bbox(self, screen, vision_object_data, idicies, image_size, cam_position):
+    def render_bbox(self, screen, cam, idicies, image_size, cam_position):
         origin_size = (1024, 576)
+        
+        vision_object_data = cam.vision_objects
         
         width_scale = image_size[0]/origin_size[0]
         length_scale = image_size[1]/origin_size[1]
@@ -139,7 +145,7 @@ class CameraDisplayModel(WindowModel):
             bbox_length = int(width_scale * bbox_length)
 
             rect = pygame.Rect(bbox_posx, bbox_posy, bbox_width, bbox_length)
-            pygame.draw.rect(screen, YELLOW, rect, 2)
+            pygame.draw.rect(screen, cam.color, rect, 1)
 
 
 
@@ -226,156 +232,3 @@ class CameraDisplayModel(WindowModel):
                 # 이전 카메라로 줌 이동
                 self.zoom[current_zoom_index] = False
                 self.zoom[previous_zoom_index] = True
-
-"""
-"""
-"""
-class CamBoundModel(WindowModel):
-    def __init__(self, width=1200, length=800):
-        super().__init__(width, length)
-        self.cam_data_list = []
-        self.current_page = 0
-        self.cams_per_page = 4
-        self.cam_bbox_mode = 1
-        self.cam_ip_box_color = RED
-        self.zoom_init()
-        self.update()
-
-    def cam_list_load(self, logging_data):
-        
-        self.cam_data_list = []
-        self.cam_ip_list = []
-        self.cam_color = []
-        for file in logging_data:
-            image = file.current_scan_data.image
-            ip = file.ip
-            color = file.current_scan_data.color
-            fsub = io.BytesIO(image)
-            img = pygame.image.load(fsub, 'jpg')
-            self.cam_ip_list.append(file.ip)
-            self.cam_data_list.append(img)
-            self.cam_color.append(color)
-
-    def update(self):
-        self.posx = self.CAM_BOUND_X
-        self.posy = self.CAM_BOUND_Y
-        self.width = int(self.WINDOW_WIDTH - self.CAM_BOUND_X)
-        self.length = self.CAM_BOUND_LENGTH
-        self.color = WHITE
-
-        self.center_hor_line_start_pos = (self.GRID_WINDOW_WIDTH, int(self.length / 2))
-        self.center_hor_line_end_pos = (self.WINDOW_WIDTH, int(self.length / 2))
-
-        self.center_ver_line_start_pos = (self.GRID_WINDOW_WIDTH + int(self.width / 2), 0)
-        self.center_ver_line_end_pos = (self.GRID_WINDOW_WIDTH + int(self.width / 2), self.length)
-        
-    def get_current_page_cams(self):
-        start_idx = self.current_page * self.cams_per_page
-        end_idx = start_idx + self.cams_per_page
-        return self.cam_data_list[start_idx:end_idx], list(range(start_idx, end_idx)), self.cam_ip_list[start_idx:end_idx], self.cam_color[start_idx:end_idx]
-
-    def next_page(self):
-        if (self.current_page + 1) * self.cams_per_page < len(self.cam_data_list):
-            self.current_page += 1
-
-    def previous_page(self):
-        if self.current_page > 0:
-            self.current_page -= 1
-    
-    
-    def render_cams(self, screen, logging_data):
-        if len(self.cam_data_list) == 0:
-            return
-        
-        cams, cam_indices, ips, colors = self.get_current_page_cams()
-        
-        positions = [
-            (self.posx, self.posy),
-            (self.center_ver_line_start_pos[0], self.posy),
-            (self.posx, self.center_hor_line_start_pos[1]),
-            (self.center_ver_line_start_pos[0], self.center_hor_line_start_pos[1])
-        ]
-        
-        # Determine which image is zoomed in, if any
-        self.zoomed_image = None
-        
-        for i, idx in enumerate(cam_indices):
-            if idx >= len(self.cam_data_list):
-                break
-            
-            if self.zoomed_in[idx]:
-                self.zoomed_image = (cams[i], (self.posx, self.posy), idx, ips[i], colors[i])
-                break
-        
-        if self.zoomed_image:
-            # Render only the zoomed-in image
-            cam, pos, idx, ip, color = self.zoomed_image
-            image = cam  # cam already contains the loaded image
-            image = pygame.transform.scale(image, (self.width, self.length))
-            # 글자 쓰기
-            myFont = pygame.font.SysFont(None, 30) #(글자체, 글자크기) None=기본글자체
-            myText = myFont.render("Cam : " + str(ip), True, (240,10,10), BLACK) #(Text,anti-alias, color)
-            rect = pygame.Rect(pos[0], pos[1],self.width, self.length)
-            
-            screen.blit(image, pos)
-            pygame.draw.rect(screen, color, rect, 2)
-            screen.blit(myText, pos)
-            self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width, self.length), pos)
-        else:
-            # Render all images at their normal size
-            for cam, pos, ip, color, idx in zip(cams, positions, ips, colors, cam_indices):
-                image = cam  # cam already contains the loaded image
-                image = pygame.transform.scale(image, (int(self.width / 2), int(self.length / 2)))
-                
-                myFont = pygame.font.SysFont(None, 30) #(글자체, 글자크기) None=기본글자체
-                myText = myFont.render("Cam : " + str(ip), True, (240,10,10), BLACK) #(Text,anti-alias, color)
-                
-                rect = pygame.Rect(pos[0], pos[1],self.width/2, self.length/2)
-                screen.blit(image, pos)
-                pygame.draw.rect(screen, color, rect, 2)
-                screen.blit(myText, pos)
-                self.render_bbox(screen, logging_data[idx].current_scan_data.vision_object_data, idx, (self.width/2, self.length/2), pos)
-
-    def render_bbox(self, screen, vision_object_data, idicies, image_size, cam_position):
-        origin_size = (1024, 576)
-        
-        width_scale = image_size[0]/origin_size[0]
-        length_scale = image_size[1]/origin_size[1]
-
-        for vobj in vision_object_data:
-            bbox_posx = vobj.bbox_posx
-            bbox_posy = vobj.bbox_posy
-            bbox_width = vobj.bbox_width
-            bbox_length = vobj.bbox_length
-
-            bbox_posx = int(width_scale * bbox_posx) + cam_position[0]
-            bbox_posy = int(length_scale * bbox_posy) + cam_position[1]
-            bbox_width = int(width_scale * bbox_width)
-            bbox_length = int(width_scale * bbox_length)
-
-            rect = pygame.Rect(bbox_posx, bbox_posy, bbox_width, bbox_length)
-            pygame.draw.rect(screen, YELLOW, rect, 2)
-
-
-
-    def handle_image_click(self, mouse_pos):
-        # Handle click events for camera images
-        cams, cam_indices, ips, colors = self.get_current_page_cams()
-        positions = [
-            (self.posx, self.posy),
-            (self.center_ver_line_start_pos[0], self.posy),
-            (self.posx, self.center_hor_line_start_pos[1]),
-            (self.center_ver_line_start_pos[0], self.center_hor_line_start_pos[1])
-        ]
-        for idx, pos in zip(cam_indices, positions):
-            rect = pygame.Rect(pos[0], pos[1], int(self.width / 2), int(self.length / 2))
-            if rect.collidepoint(mouse_pos):
-                
-                if not self.zoomed_in[idx]:
-                    self.zoom_init()
-                    self.zoomed_in[idx] = True
-                
-                else:
-                    self.zoomed_in[idx] = False
-                break  # Only one image can be clicked at a time
-"""
