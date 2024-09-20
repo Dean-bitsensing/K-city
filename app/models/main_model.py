@@ -123,7 +123,6 @@ class MainModel:
             for atm in intersection.atms:
                 atm.atm_azi_angle = adjusted_azi_thetas[idx]
         
-            
                 for cur_scan_data in atm.current_scan_data.fusion_object_data:
                     if cur_scan_data.id in atm.selected_fobj_id:
                         print('in')
@@ -162,13 +161,9 @@ class MainModel:
                         posx = position[0][0]
                         posy = position[1][0]
 
-                        #TODO 변환했을 때 posx, posy를 우리 상황에 맞게 변경
-                        # posx = cur_scan_data.posx * math.cos(math.radians(atm.atm_azi_angle))
-                        # posy = cur_scan_data.posy * math.sin(math.radians(atm.atm_azi_angle))
-
                         selected_points.append([posx, posy])
                         selected_atm_id.append(idx)
-                        idx += 1
+                idx += 1
 
         # Calculate the sum of distances between each pair of points
         dist_sum = 0

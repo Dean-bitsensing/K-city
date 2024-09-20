@@ -161,13 +161,25 @@ class ScanData(Atm):
         
         
         
-        def tf(pos, transition_matrix, transition_matrix2):
+        def tf(pos, transition_matrix, transition_matrix2, heading_matrix, posx, posy):
             
             position = np.array([[pos[0]],[pos[1]],[1]])
+            
             position = np.dot(transition_matrix,position)
+            
             position = np.dot(transition_matrix2, position)
+            
             pos[0] = position[0][0]
             pos[1] = position[1][0]
+
+            posx_c = pos[0] - posx
+            posy_c = pos[1] - posy
+
+            position = np.array([[posx_c],[posy_c],[1]])
+            position = np.dot(heading_matrix,position)
+
+            pos[0] = position[0][0] + posx
+            pos[1] = position[1][0] + posy
 
             return pos
         
@@ -179,6 +191,7 @@ class ScanData(Atm):
             posy                = fobj[6]
             velx                = fobj[9]
             vely                = fobj[10]
+            heading_angle_deg   = fobj[11]
             width               = fobj[13]
             length              = fobj[14]
 
@@ -188,18 +201,21 @@ class ScanData(Atm):
             new_fobj.vely   = vely
             new_fobj.width  = width
             new_fobj.length = length
+            new_fobj.heading_angle_deg = heading_angle_deg
 
 
             posx = -posx
             velx = -velx
             
-
+            heading_angle_rad = -heading_angle_deg * math.pi/180
             ul_pos = [int(posx - length/2), int(posy - width/2)]
             ur_pos = [int(posx - length/2), int(posy + width/2)]
             dl_pos = [int(posx + length/2), int(posy - width/2)]
             dr_pos = [int(posx + length/2), int(posy + width/2)]
 
-            
+            heading_transition_matrix = np.array([[math.cos(heading_angle_rad), - math.sin(heading_angle_rad), 0],
+                                      [math.sin(heading_angle_rad), math.cos(heading_angle_rad), 0],
+                                      [0,0,1]])
             
             posx = meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
             posy = meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
@@ -217,11 +233,8 @@ class ScanData(Atm):
             dr_pos[0] = meters_to_pixels(dr_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
             dr_pos[1] = meters_to_pixels(dr_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
-            ul_pos = tf(ul_pos, transition_matrix, transition_matrix2)
-            ur_pos = tf(ur_pos, transition_matrix, transition_matrix2)
-            dl_pos = tf(dl_pos, transition_matrix, transition_matrix2)
-            dr_pos = tf(dr_pos, transition_matrix, transition_matrix2)
-
+            new_fobj.before_posx = posx
+            new_fobj.before_posy = posy
             
             position = np.array([[posx],[posy],[1]])
             position = np.dot(transition_matrix,position)
@@ -232,6 +245,10 @@ class ScanData(Atm):
             new_fobj.trns_posx = posx
             new_fobj.trns_posy = posy
             
+            ul_pos = tf(ul_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
+            ur_pos = tf(ur_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
+            dl_pos = tf(dl_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
+            dr_pos = tf(dr_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
 
             new_fobj.ul_pos = ul_pos
             new_fobj.ur_pos = ur_pos
