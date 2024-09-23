@@ -17,10 +17,10 @@ class MainModel:
 
         self.view_mode          = [0]  # 0 : OverAll View , 1 : Intersection View , 2 : ATM View
         self.track_mode         = [0]  # 0 : Fusion,        1 : Vision,             2 : Radar
-
         self.config             = config
         self.logging_data_num   = 0
         self.logging_data       = []
+        self.intersection_fusion_objs = []
         self.intersections      = []
         self.intersection_num   = config['info']['intersection_num']
         self.atm_num            = config['info']['atm_num']
@@ -45,7 +45,8 @@ class MainModel:
                 self.intersections.append(itsc)
                 self.logging_data.extend(itsc.h5_files)
 
-        
+    
+
     def set_min_max_scan(self): # 여러개의 logging file중 가장 작은 값으로 설정해야함.
         
         self.min_scan = -1

@@ -20,7 +20,7 @@ class CameraDisplayModel(WindowModel):
         self.current_page = 0
         self.cams_per_page = 4
         self.cam_bbox_mode = 1
-        self.cam_ip_box_color = RED
+        self.cam_ip_box_color = WHITE
         self.zoom_init()
         self.update(width, length)
 
@@ -28,7 +28,8 @@ class CameraDisplayModel(WindowModel):
         self.cam_list = []
         for intersection in intersections:
             for atm in intersection.atms:
-                
+                if not atm.view:
+                    continue
                 image = atm.current_scan_data.image
                 fsub = io.BytesIO(image)
                 img = pygame.image.load(fsub, 'jpg')

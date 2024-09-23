@@ -72,6 +72,8 @@ class Intersection():
 class Atm(Intersection):
     def __init__(self, lat, long, azi_angle, atm_color, logging_data_path, landmark, intersection):
 
+        self.view = True
+
         # set IP and Intersection number according to file_path
 
         self.logging_data_path = logging_data_path

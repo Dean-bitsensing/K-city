@@ -8,7 +8,7 @@ class MainViewer:
 
         self.running = True
         self.paused = True
-
+        self.delete_mode = False
         self.current_scan = 0
         self.before_scan = 0
         self.class_init()
@@ -36,6 +36,9 @@ class MainViewer:
         # self.radar_postions.draw_vision_object()
         self.radar_postions.draw_fusion_object()
         self.radar_postions.draw_fusion_object_index()
+
+        if self.delete_mode:
+            self.data_info_window.draw_delete_info()
         
         self.model.cam_bound_model.cam_list_load(self.model.intersections)
         self.model.cam_bound_model.render_cams(self.screen, self.model.intersections)
@@ -197,9 +200,9 @@ class MultipleRadarPositionView:
                 radar_posx = atm.current_scan_data.radar_posx
                 radar_posy = atm.current_scan_data.radar_posy
                 if atm.selected == False:
-                    pygame.draw.circle(self.screen, atm.color, (radar_posx, radar_posy), 5, 0)
+                    pygame.draw.circle(self.screen, atm.color, (radar_posx, radar_posy), 7, 0)
                 else:
-                    pygame.draw.circle(self.screen, (0,0,0), (radar_posx, radar_posy), 5, 0)
+                    pygame.draw.circle(self.screen, (0,0,0), (radar_posx, radar_posy), 7, 0)
                 font = pygame.font.Font(None, 20)
                 text = font.render(atm.ip, True, self.model.cam_bound_model.cam_ip_box_color)  # 렌더링할 텍스트와 색상
                 text_rect = text.get_rect()
@@ -234,6 +237,8 @@ class MultipleRadarPositionView:
     def draw_fusion_object(self):
         for intersection in self.model.intersections:
             for atm in intersection.atms:
+                if not atm.view:
+                    continue
                 for fobj in atm.current_scan_data.fusion_object_data:
                     if not self.check_in_grid_window(fobj.trns_posx, fobj.trns_posy):
                         continue
@@ -258,6 +263,8 @@ class MultipleRadarPositionView:
 
         for intersection in self.model.intersections: # TODO 현재 모든 atm데이터에 대해서 다 그리고 있지만, atm별로 하는 것으로 구분할 필요있음
             for atm in intersection.atms:
+                if not atm.view:
+                    continue
                 for fobj in atm.current_scan_data.fusion_object_data:
                     if not self.check_in_grid_window(fobj.trns_posx, fobj.trns_posy):
                         continue
@@ -278,3 +285,25 @@ class DataInfoWindowView:
     
     def draw_data_info_window(self):
         pygame.draw.rect(self.screen, self.model.color, (self.model.posx, self.model.posy, self.model.width, self.model.length),2)
+
+    def draw_delete_info(self):
+        font = pygame.font.Font(None, 20)
+        text_lines = [
+            "delete + 0 : 1.0.0.20",
+            "delete + 1 : 1.0.0.21 not able",
+            "delete + 2 : 1.0.0.22",
+            "delete + 3 : 1.0.0.23",
+            "delete + 4 : 1.0.0.24",
+            "delete + 5 : 1.0.0.25",
+            "",
+            "delete + 6 : 1.0.0.10 not able",
+            "delete + 7 : 1.0.0.11 not able",
+            "delete + 8 : 1.0.0.12",
+            "delete + 9 : 1.0.0.13 not able",
+        ]
+
+        y_offset = 25  # 처음 텍스트의 y 위치
+        for line in text_lines:
+            text = font.render(line, True, (255, 255, 255))  # 흰색 텍스트
+            self.screen.blit(text, (50, y_offset))  # 텍스트를 화면에 출력
+            y_offset += 40  # 다음 텍스트의 y 위치를 아래로 이동

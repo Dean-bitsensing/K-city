@@ -15,3 +15,5 @@ class InfoWindowModel(WindowModel):
         self.posy = self.DATA_INFO_Y
         self.width = self.DATA_INFO_WIDTH
         self.length = self.DATA_INFO_LENGTH
+
+

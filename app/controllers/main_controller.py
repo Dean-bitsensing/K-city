@@ -18,6 +18,8 @@ class MainController:
             self.update_config(event.w, event.h)
         elif event.type == pygame.KEYDOWN:
             self.handle_keydown(event)
+            keys = pygame.key.get_pressed()
+            self.handle_double_keydown(keys)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left mouse button
                 self.handle_mouse_left_click(event.pos)
@@ -153,6 +155,36 @@ class MainController:
             self.model.landmark[1] = self.model.config['interno']['intersection_center_gps'][1]
             self.model.landmark[2] = self.model.config['interno']['intersection_map_zoom']
             self.model.grid_model.parsing_map()
+
+
+        elif event.key == pygame.K_d:
+            self.viewer.delete_mode = not self.viewer.delete_mode
+
+
+
+    def handle_double_keydown(self,keys):
+        if keys[pygame.K_DELETE] and keys[pygame.K_0]:
+            self.model.intersections[0].atms[0].view = not self.model.intersections[0].atms[0].view
+        # elif keys[pygame.K_d] and keys[pygame.K_1]:
+        #     self.model.display_atm['1.0.0.21'] = not self.model.display_atm['1.0.0.21']
+        elif keys[pygame.K_DELETE] and keys[pygame.K_2]:
+            self.model.intersections[0].atms[1].view = not self.model.intersections[0].atms[1].view
+        elif keys[pygame.K_DELETE] and keys[pygame.K_3]:
+            self.model.intersections[0].atms[2].view = not self.model.intersections[0].atms[2].view
+        elif keys[pygame.K_DELETE] and keys[pygame.K_4]:
+            self.model.intersections[0].atms[3].view = not self.model.intersections[0].atms[3].view
+        elif keys[pygame.K_DELETE] and keys[pygame.K_5]:
+            self.model.intersections[0].atms[4].view = not self.model.intersections[0].atms[4].view
+
+
+        # elif keys[pygame.K_d] and keys[pygame.K_6]:
+        #     self.model.display_atm['1.0.0.10'] = not self.model.display_atm['1.0.0.10']
+        # elif keys[pygame.K_d] and keys[pygame.K_7]:
+        #     self.model.display_atm['1.0.0.11'] = not self.model.display_atm['1.0.0.11']
+        elif keys[pygame.K_DELETE] and keys[pygame.K_8]:
+            self.model.intersections[1].atms[0].view = not self.model.intersections[1].atms[0].view
+        # elif keys[pygame.K_d] and keys[pygame.K_9]:
+        #     self.model.display_atm['1.0.0.13'] = not self.model.display_atm['1.0.0.13']
 
 
     def handle_mouse_left_click(self, mouse_pos):

@@ -6,10 +6,10 @@ from .colors import *
 class CameraReturnButton(CameraDisplayModel):
     def __init__(self, width=1200, length=800):
         super().__init__(width, length)
-        self.update(width, length)
+        self.update()
 
-    def update(self, width, length):
-        super().update(width, length)
+    def update(self):
+        super().update()
         self.button_width = self.width // 20
         self.button_length = self.button_width
         self.button_posx = self.WINDOW_WIDTH - self.button_width
