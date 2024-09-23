@@ -95,7 +95,7 @@ class Atm(Intersection):
 
 
         # set initial value of list used to get obj info individually
-
+        self.updated = False
         self.selected = False
         self.selected_vobj_id = []
         self.selected_fobj_id = []

@@ -1,6 +1,6 @@
 import pygame
-import config
-
+import yaml
+from .tkinter import *
 SKIP_SIZE = 1
 BIG_SKIP_SIZE = 20
 LARGE_SKIP_SIZE = 100
@@ -89,24 +89,28 @@ class MainController:
                 for atm in intersection.atms:
                     if atm.selected:
                         atm.atm_lat += 0.000001
+                        atm.updated = True
                         print(atm.atm_lat)
         elif event.key == pygame.K_j:
             for intersection in self.model.intersections:
                 for atm in intersection.atms:
                     if atm.selected:
                         atm.atm_long -= 0.000001
+                        atm.updated = True
                         print(atm.atm_long)
         elif event.key == pygame.K_k:
             for intersection in self.model.intersections:
                 for atm in intersection.atms:
                     if atm.selected:
                         atm.atm_lat -= 0.000001
+                        atm.updated = True
                         print(atm.atm_lat)
         elif event.key == pygame.K_l:
             for intersection in self.model.intersections:
                 for atm in intersection.atms:
                     if atm.selected:
                         atm.atm_long += 0.000001
+                        atm.updated = True
                         print(atm.atm_long)
 
         elif event.key == pygame.K_t:
@@ -114,6 +118,7 @@ class MainController:
                 for atm in intersection.atms:
                     if atm.selected:
                         atm.atm_azi_angle += 1
+                        atm.updated = True
                         print(atm.atm_azi_angle)
 
         elif event.key == pygame.K_y:
@@ -121,6 +126,7 @@ class MainController:
                 for atm in intersection.atms:
                     if atm.selected:
                         atm.atm_azi_angle -= 1
+                        atm.updated = True
                         print(atm.atm_azi_angle)
         
         elif event.key == pygame.K_8:
@@ -132,6 +138,23 @@ class MainController:
                         print(f'atm_lat       : {atm.atm_lat}')
                         print(f'atm_long      : {atm.atm_long}')
                         print(f'atm_azi_angle : {atm.atm_azi_angle}')
+
+        elif event.key == pygame.K_s:
+            result = create_window()
+            if result:
+                config = load_yaml('config.yaml')
+                print('successfully saved')
+                for intersection in self.model.intersections:
+                    for atm in intersection.atms:
+                        if atm.updated == True:
+                            config['verona'][intersection.name]['radar_gps_'+atm.ip][0] = atm.atm_lat
+                            config['verona'][intersection.name]['radar_gps_'+atm.ip][1] = atm.atm_long
+                            config['verona'][intersection.name]['radar_azi_angle_'+atm.ip] = atm.atm_azi_angle
+
+                save_yaml('config.yaml',config)
+                self.viewer.running = False
+            else:
+                print("ㅠㅠ")
 
         elif event.key == pygame.K_F2:
             self.model.view_mode[0] = 1
@@ -223,5 +246,13 @@ class MainController:
         
 
         
+def load_yaml(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:  # 인코딩을 utf-8로 지정
+        data = yaml.safe_load(file)
+    return data
 
+# YAML 파일 저장
+def save_yaml(file_path, data):
+    with open(file_path, 'w') as file:
+        yaml.dump(data, file, default_flow_style=False)
 
