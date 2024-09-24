@@ -19,5 +19,6 @@ K-City Tool Key Manual
     - delete + 숫자(d 키 누른 뒤 정보 참조) : 해당 ATM의 Track 정보 표출/표출 안함
 
 - 마우스 클릭
-    - 좌클릭 : 
     - 우클릭 : 마우스 위치의 ATM 선택/선택 취소
+
+

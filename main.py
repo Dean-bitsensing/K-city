@@ -1,6 +1,7 @@
 import pygame
 from app import *
 import yaml
+import threading
 
 def load_config():
     # YAML 파일 로드
@@ -55,8 +56,9 @@ def run_pygame(config):
     pygame.quit()
 
 def main(config):
-    run_pygame(config)
-    
+    pygame_thread = threading.Thread(target=run_pygame, args=(config, ))
+    pygame_thread.start()
+
 if __name__ == "__main__":
     # YAML 파일 로드
     config = load_config()

@@ -3,7 +3,8 @@ fps: 15
 verona:
   esterno:
     atm_nun: 6
-    folder_path: C:\kcity_loggingdata\datas\esterno
+    folder_path: C:/kcity_loggingdata/datas/esterno
+    new_path : C:/kcity_loggingdata/240919/Esterno
     intersection_center_gps:
     - 45.4305233
     - 10.9877399
@@ -12,9 +13,9 @@ verona:
     radar_azi_angle_1.0.0.20: 246.71
     radar_azi_angle_1.0.0.21: 0
     radar_azi_angle_1.0.0.22: -27.1
-    radar_azi_angle_1.0.0.23: 47
-    radar_azi_angle_1.0.0.24: 14
-    radar_azi_angle_1.0.0.25: 74
+    radar_azi_angle_1.0.0.23: 19
+    radar_azi_angle_1.0.0.24: 7
+    radar_azi_angle_1.0.0.25: 67
     radar_gps_1.0.0.20:
     - 45.4307813
     - 10.9878318
@@ -25,8 +26,8 @@ verona:
     - 45.4301545
     - 10.9879317
     radar_gps_1.0.0.23:
-    - 45.43002380689111
-    - 10.988080009527579
+    - 45.430174806890726
+    - 10.987974009527658
     radar_gps_1.0.0.24:
     - 45.4307873
     - 10.9877108
@@ -34,6 +35,7 @@ verona:
     - 45.430359
     - 10.9882485
   info:
+    path : C:/kcity_loggingdata/240920/Esterno/1.0.0.21/vds
     API_KEY: AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw
     UTM_zone_32N: epsg:32652
     WGS84: epsg:4326
