@@ -24,7 +24,8 @@ class MainViewer:
         self.cam_right_button = CamChangeRightButtonView(self.model.cam_change_right_button_model, self.screen)
         
         self.cam_return_button = CamReturnButtonView(self.model.cam_return_button_model, self.screen)
-        self.vds_data_button = VDSDataButtonView(self.model.vds_data_model, self.screen)
+        self.vds_data_button = InfoButtonView(self.model.vds_button_model, self.screen)
+        self.save_change_button = InfoButtonView(self.model.save_button_model, self.screen)
         self.data_info_window = DataInfoWindowView(self.model.data_info_window_model,self.screen)
 
     def window_resize(self):
@@ -53,6 +54,7 @@ class MainViewer:
             self.cam_return_button.draw_return_button()
         
         self.vds_data_button.draw_return_button()
+        self.save_change_button.draw_return_button()
         self.data_info_window.draw_data_info_window()
         self.data_info_window.draw_selected_atms_in_info_model(self.model.intersections)
         
@@ -167,11 +169,11 @@ class CamReturnButtonView:
             2
         )
 
-class VDSDataButtonView:
+class InfoButtonView:
     def __init__(self, model, screen):
         self.screen = screen
         self.model = model
-        self.font = pygame.font.Font(None, 36)  # 기본 폰트 사용, 크기는 36
+        self.font = pygame.font.Font(None, self.model.font_size)  # 기본 폰트 사용, 크기는 36
 
     def draw_return_button(self):
         # 버튼 그리기
@@ -199,6 +201,7 @@ class VDSDataButtonView:
 
         # 텍스트 그리기
         self.screen.blit(text_surface, text_rect)
+
 
 class BackGroundImageView:
     def __init__(self, model, screen):

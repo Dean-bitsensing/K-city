@@ -20,6 +20,7 @@ class InfoWindowModel(WindowModel):
         self.length = self.DATA_INFO_LENGTH
         self.font_size = self.width//30
         self.offset = self.length//20
+        self.button_offset = self.length//10
 
 
 

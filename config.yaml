@@ -53,6 +53,7 @@ verona:
     - 10.988251
     intersection_idx: 1
     intersection_map_zoom: 19
+    new_path: C:/kcity_loggingdata/240919/Interno
     radar_azi_angle_1.0.0.10: 0
     radar_azi_angle_1.0.0.11: 0
     radar_azi_angle_1.0.0.12: 157.36

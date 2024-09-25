@@ -1,4 +1,5 @@
 import pygame
+import os
 import yaml
 from .UI_windows import *
 from .UI_save_window import *
@@ -14,8 +15,8 @@ class MainController:
 
     def handle_event(self, event):
         if event.type == pygame.QUIT:
-            self.close_all_tk_windows()
             self.viewer.running = False
+            os._exit(0)
         elif event.type == pygame.VIDEORESIZE:
             self.update_config(event.w, event.h)
         elif event.type == pygame.KEYDOWN:
@@ -79,8 +80,7 @@ class MainController:
         elif event.key == pygame.K_SPACE:
             self.viewer.paused = not self.viewer.paused
 
-        elif event.key == pygame.K_s:
-            self.handle_save()
+    
         elif event.key == pygame.K_0:
             self.model.object_matching()
 
@@ -202,7 +202,7 @@ class MainController:
             print("ㅠㅠ")
 
     def handle_mouse_left_click(self, mouse_pos):
-        if self.model.vds_data_model.is_clicked(mouse_pos):
+        if self.model.vds_button_model.is_clicked(mouse_pos):
             configs = []
             selected_atms = []
             for intersection in self.model.intersections:
@@ -211,7 +211,9 @@ class MainController:
                         configs.append(self.model.config[intersection.name])
                         selected_atms.append(atm)
 
-            start_vds_view_thread(configs, selected_atms)
+            start_vds_view(configs, selected_atms)
+        if self.model.save_button_model.is_clicked(mouse_pos):
+            self.handle_save()
         else:
             self.model.cam_bound_model.handle_image_click(mouse_pos)
 
@@ -221,14 +223,6 @@ class MainController:
     def update_config(self, width, length):
         self.model.window_resize(width, length)
         self.viewer.window_resize()
-
-    def close_all_tk_windows(self):
-        """모든 Tk 창을 닫습니다."""
-        for window in self.tk_windows_list:
-            if window.winfo_exists():  # 창이 아직 존재하는 경우에만
-                window.quit()  # 메인 루프 종료
-                window.destroy()  # 창 제거
-        self.tk_windows_list.clear()
 
 def load_yaml(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:

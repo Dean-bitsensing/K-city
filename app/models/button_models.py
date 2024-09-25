@@ -1,6 +1,7 @@
 # models/button_models.py
 from .camera_display_model import CameraDisplayModel
 from .window_model import WindowModel
+from.info_window_model import InfoWindowModel
 from .colors import *
 
 class CameraReturnButton(CameraDisplayModel):
@@ -79,6 +80,60 @@ class VDSDataButton(WindowModel):
 
         self.color = WHITE
         self.text = "VDS DATA"
+        self.text_color = BLACK
+        self.outline_color = BLACK
+
+    def is_clicked(self, mouse_pos):
+        return (
+            self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
+            self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length
+        )
+    
+
+class VDSDataButton(InfoWindowModel):
+    def __init__(self, width=1200, length=800):
+        super().__init__(width, length)
+        self.update(width,length)
+
+    def update(self, width, length):
+        super().update(width, length)
+
+        self.button_width = self.width//10
+        self.button_length = self.length//10
+
+        self.button_posx = self.posx + self.width - self.offset - self.button_width
+        self.button_posy = self.posy + self.offset
+
+        self.color = WHITE
+        self.font_size = self.width//60
+        self.text = "VDS DATA"
+        self.text_color = BLACK
+        self.outline_color = BLACK
+
+    def is_clicked(self, mouse_pos):
+        return (
+            self.button_posx <= mouse_pos[0] <= self.button_posx + self.button_width and
+            self.button_posy <= mouse_pos[1] <= self.button_posy + self.button_length
+        )
+    
+
+class SaveChangeButton(InfoWindowModel):
+    def __init__(self, width=1200, length=800):
+        super().__init__(width, length)
+        self.update(width,length)
+
+    def update(self, width, length):
+        super().update(width, length)
+        
+        self.button_width = self.width//10
+        self.button_length = self.length//10
+
+        self.button_posx = self.posx + self.width - self.offset - self.button_width
+        self.button_posy = self.posy + self.offset + self.button_offset
+
+        self.color = WHITE
+        self.font_size = self.width//60
+        self.text = "SAVE"
         self.text_color = BLACK
         self.outline_color = BLACK
 
