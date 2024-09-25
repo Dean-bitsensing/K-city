@@ -90,12 +90,15 @@ class PlotAppThread(threading.Thread):
     def create_total_lane_plot_window(self, atm):
         plot_window = tk.Toplevel(self.root)
         plot_window.title(f'ATM: {atm.ip}')
-        plot_window.geometry('800x1000')
+        plot_window.geometry('800x600')
 
         fig, axs = plt.subplots(2, 1, figsize=(10, 8))
         self.axs = axs
         self.atm = atm
         self.fig = fig
+
+        # 간격 조정 (subplots 간의 간격을 조정)
+        plt.subplots_adjust(hspace=0.4)  # 상하 간격 조정
 
         # 모든 활성화된 레인에 대해 그래프 그리기
         self.update_graphs()
@@ -185,6 +188,8 @@ class PlotAppThread(threading.Thread):
         self.axs[1].set_xticklabels(x_ticks, rotation=45)
         self.axs[1].legend()
 
+        # 레이아웃 조정을 통해 겹침 방지
+        plt.tight_layout()
         self.fig.canvas.draw()
 
     def on_close(self):
