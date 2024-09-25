@@ -137,7 +137,10 @@ class ScanData(Atm):
         self.status_json = json.loads(status_data.tobytes().decode('utf-8'))
 
     def parsing_image(self):
-        self.image = self.current_scan_data['Image'][()]
+        if 'Image' in self.current_scan_data:
+            self.image = self.current_scan_data['Image'][()]
+        else:
+            self.image = None
 
 
     def parsing_fusion_object_data(self):

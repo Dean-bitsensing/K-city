@@ -24,6 +24,7 @@ class MainViewer:
         
         self.cam_return_button = CamReturnButtonView(self.model.cam_return_button_model, self.screen)
         self.data_info_window = DataInfoWindowView(self.model.data_info_window_model,self.screen)
+        self.objects_info = ObjectsInfoView(self.model, self.screen)
 
     def window_resize(self):
         self.class_init()
@@ -47,6 +48,7 @@ class MainViewer:
             self.cam_return_button.draw_return_button()
         self.data_info_window.draw_data_info_window()
         
+        self.objects_info.draw_obj_info_window()
     
 
 class GridView:
@@ -270,7 +272,20 @@ class MultipleRadarPositionView:
 
                     # 텍스트를 pos 위치에 그리기
                     self.screen.blit(text_surface, pos)
+class ObjectsInfoView:
+    def __init__(self, model, screen):
+        self.screen = screen
+        self.model = model
+        pass
     
+    def draw_obj_info_window(self):
+        pygame.draw.rect(self.screen, (200,200,200), (0, 
+                                                    self.model.window_model.GRID_WINDOW_LENGTH, 
+                                                    self.model.window_model.GRID_WINDOW_WIDTH, 
+                                                    (self.model.window_model.WINDOW_LENGTH-self.model.window_model.GRID_WINDOW_LENGTH)),
+                                                    2)
+
+
 class DataInfoWindowView:
     def __init__(self, model, screen):
         self.screen = screen

@@ -50,7 +50,8 @@ class MainModel:
         
         self.min_scan = -1
         self.max_scan = 99999999999
-
+        max_file = None
+        min_file = None
         for file in self.logging_data:
             file = h5py.File(file, 'r')
             max = int(file['DATA_INFO']['finScan'][()].item())
@@ -58,17 +59,18 @@ class MainModel:
 
             if min > self.min_scan:
                 self.min_scan = min
+                min_file = file.filename
             
             if max < self.max_scan:
                 self.max_scan = max
+                max_file = file.filename
             file.close()
-    
+
+        print(self.max_scan, min_file, max_file)
     def load_data(self, current_scan):
         for intersection in self.intersections:
             for atm in intersection.atms:
                 atm.get_scan_data(current_scan, self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
-
-
 
     def init_model_class(self):
         self.window_model = WindowModel()

@@ -28,7 +28,8 @@ class CameraDisplayModel(WindowModel):
         self.cam_list = []
         for intersection in intersections:
             for atm in intersection.atms:
-                
+                if atm.current_scan_data.image is None:
+                    continue
                 image = atm.current_scan_data.image
                 fsub = io.BytesIO(image)
                 img = pygame.image.load(fsub, 'jpg')
