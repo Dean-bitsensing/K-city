@@ -213,7 +213,20 @@ class MainController:
         if self.model.save_button_model.is_clicked(mouse_pos):
             self.handle_save()
 
+        if self.model.cam_change_left_button_model.is_clicked(mouse_pos):
+            if self.model.cam_bound_model.is_zoom():
+                self.model.cam_bound_model.previous_zoom()
+            else:
+                self.model.cam_bound_model.previous_page()
+                self.model.cam_bound_model.zoom_init()
             
+        elif self.model.cam_change_right_button_model.is_clicked(mouse_pos):
+            if self.model.cam_bound_model.is_zoom():
+                self.model.cam_bound_model.next_zoom()
+            else:
+                self.model.cam_bound_model.next_page()
+                self.model.cam_bound_model.zoom_init()
+                
         else:
             self.model.cam_bound_model.handle_image_click(mouse_pos)
 
