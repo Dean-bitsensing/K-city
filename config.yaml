@@ -9,7 +9,6 @@ verona:
     - 10.9877399
     intersection_idx: 2
     intersection_map_zoom: 19
-    new_path: C:/kcity_loggingdata/240919/Esterno
     radar_azi_angle_1.0.0.20: 246.71
     radar_azi_angle_1.0.0.21: 0
     radar_azi_angle_1.0.0.22: -27.1
@@ -35,6 +34,7 @@ verona:
     - 45.430359
     - 10.9882485
   info:
+    data_path: C:\kcity_loggingdata
     API_KEY: AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw
     UTM_zone_32N: epsg:32652
     WGS84: epsg:4326
@@ -44,7 +44,6 @@ verona:
     - 10.988078
     intersection_num: 2
     map_zoom: 18
-    path: C:/kcity_loggingdata/240920/Esterno/1.0.0.21/vds
   interno:
     atm_nun: 4
     folder_path: C:\kcity_loggingdata\datas\interno
@@ -53,7 +52,6 @@ verona:
     - 10.988251
     intersection_idx: 1
     intersection_map_zoom: 19
-    new_path: C:/kcity_loggingdata/240919/Interno
     radar_azi_angle_1.0.0.10: 0
     radar_azi_angle_1.0.0.11: 0
     radar_azi_angle_1.0.0.12: 157.36

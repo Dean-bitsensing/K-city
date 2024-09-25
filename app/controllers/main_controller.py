@@ -203,17 +203,17 @@ class MainController:
 
     def handle_mouse_left_click(self, mouse_pos):
         if self.model.vds_button_model.is_clicked(mouse_pos):
-            configs = []
             selected_atms = []
             for intersection in self.model.intersections:
                 for atm in intersection.atms:
                     if atm.selected:
-                        configs.append(self.model.config[intersection.name])
                         selected_atms.append(atm)
 
-            start_vds_view(configs, selected_atms)
+            start_vds_view(self.model.config, selected_atms)
         if self.model.save_button_model.is_clicked(mouse_pos):
             self.handle_save()
+
+            
         else:
             self.model.cam_bound_model.handle_image_click(mouse_pos)
 
