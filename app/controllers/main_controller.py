@@ -1,6 +1,7 @@
 import pygame
 import yaml
 from .UI_windows import *
+from .UI_save_window import *
 
 SKIP_SIZE = 1
 BIG_SKIP_SIZE = 20
@@ -80,6 +81,84 @@ class MainController:
 
         elif event.key == pygame.K_s:
             self.handle_save()
+        elif event.key == pygame.K_0:
+            self.model.object_matching()
+
+        elif event.key == pygame.K_9:
+            self.model.clear_selected()
+
+        elif event.key == pygame.K_i:
+            for intersection in self.model.intersections:
+                for atm in intersection.atms:
+                    if atm.selected:
+                        atm.atm_lat += 0.000001
+                        print(atm.atm_lat)
+        elif event.key == pygame.K_j:
+            for intersection in self.model.intersections:
+                for atm in intersection.atms:
+                    if atm.selected:
+                        atm.atm_long -= 0.000001
+                        print(atm.atm_long)
+        elif event.key == pygame.K_k:
+            for intersection in self.model.intersections:
+                for atm in intersection.atms:
+                    if atm.selected:
+                        atm.atm_lat -= 0.000001
+                        print(atm.atm_lat)
+        elif event.key == pygame.K_l:
+            for intersection in self.model.intersections:
+                for atm in intersection.atms:
+                    if atm.selected:
+                        atm.atm_long += 0.000001
+                        print(atm.atm_long)
+
+        elif event.key == pygame.K_t:
+            for intersection in self.model.intersections:
+                for atm in intersection.atms:
+                    if atm.selected:
+                        atm.atm_azi_angle += 1
+                        print(atm.atm_azi_angle)
+
+        elif event.key == pygame.K_y:
+            for intersection in self.model.intersections:
+                for atm in intersection.atms:
+                    if atm.selected:
+                        atm.atm_azi_angle -= 1
+                        print(atm.atm_azi_angle)
+        
+        elif event.key == pygame.K_8:
+            for intersection in self.model.intersections:
+                for atm in intersection.atms:
+                    if atm.selected:
+                        print(f'file name     : {atm.logging_data_path}')
+                        print(f'ip            : {atm.ip}')
+                        print(f'atm_lat       : {atm.atm_lat}')
+                        print(f'atm_long      : {atm.atm_long}')
+                        print(f'atm_azi_angle : {atm.atm_azi_angle}')
+
+        elif event.key == pygame.K_F2:
+            self.model.view_mode[0] = 1
+            
+            self.model.landmark[0] = self.model.config['esterno']['intersection_center_gps'][0]
+            self.model.landmark[1] = self.model.config['esterno']['intersection_center_gps'][1]
+            self.model.landmark[2] = self.model.config['esterno']['intersection_map_zoom']
+            self.model.grid_model.parsing_map()
+        elif event.key == pygame.K_F1:
+            self.model.view_mode[0] = 0
+            
+            self.model.landmark[0] = self.model.config['info']['center_gps'][0]
+            self.model.landmark[1] = self.model.config['info']['center_gps'][1]
+            self.model.landmark[2] = self.model.config['info']['map_zoom']
+            self.model.grid_model.parsing_map()
+
+        elif event.key == pygame.K_F3:
+            self.model.view_mode[0] = 2
+            
+            self.model.landmark[0] = self.model.config['interno']['intersection_center_gps'][0]
+            self.model.landmark[1] = self.model.config['interno']['intersection_center_gps'][1]
+            self.model.landmark[2] = self.model.config['interno']['intersection_map_zoom']
+            self.model.grid_model.parsing_map()
+
 
     def handle_double_keydown(self,keys):
         if keys[pygame.K_DELETE] and keys[pygame.K_0]:
@@ -106,7 +185,7 @@ class MainController:
         #     self.model.display_atm['1.0.0.13'] = not self.model.display_atm['1.0.0.13']
 
     def handle_save(self):
-        result = run_save_view()
+        result = create_window()
         if result:
             config = load_yaml('config.yaml')
             print('successfully saved')

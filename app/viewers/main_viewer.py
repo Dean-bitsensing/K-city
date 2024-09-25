@@ -54,6 +54,7 @@ class MainViewer:
         
         self.vds_data_button.draw_return_button()
         self.data_info_window.draw_data_info_window()
+        self.data_info_window.draw_selected_atms_in_info_model(self.model.intersections)
         
     
 
@@ -345,3 +346,17 @@ class DataInfoWindowView:
             text = font.render(line, True, (255, 255, 255))  # 흰색 텍스트
             self.screen.blit(text, (50, y_offset))  # 텍스트를 화면에 출력
             y_offset += 40  # 다음 텍스트의 y 위치를 아래로 이동
+
+    def draw_selected_atms_in_info_model(self, intersections):
+        font = pygame.font.Font(None, self.model.font_size)
+        y_offset = self.model.offset
+        for intersection in intersections:
+            for atm in intersection.atms:
+                if atm.selected:
+                    if atm.vds_view:
+                        text_surface = font.render(atm.ip, True, self.model.selected_font_color)
+                    else:
+                        text_surface = font.render(atm.ip, True, self.model.base_font_color)   
+                    self.screen.blit(text_surface, (self.model.posx + self.model.offset, self.model.posy + y_offset))
+                    y_offset +=self.model.offset
+

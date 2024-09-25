@@ -15,36 +15,45 @@ class DataProcessingThread(threading.Thread):
 
     def run(self):
         df = self.load_and_merge_csv_files(self.config, self.atm)
-        self.result_queue.put((self.atm, df))
+        if not df.empty:
+            self.atm.vds_view = True  # Set to True if data is processed
+            self.result_queue.put((self.atm, df))
 
     def load_and_merge_csv_files(self, config, atm):
         directory = config['new_path'] + '/' + atm.ip + '/vds'
-        all_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.csv')]
-        df_list = []
-        for file in all_files:
-            df = pd.read_csv(file)
-            df['time'] = pd.to_datetime(df['time'], format='%Y%m%d_%H:%M:%S')
-            df['time'] = df['time'] - pd.Timedelta(hours=7)
-            df['hour_bin'] = df['time'].dt.hour
-            if not df.empty and df.notna().sum().sum() > 0:
-                df_list.append(df)
-        if df_list:
-            merged_df = pd.concat(df_list, ignore_index=True)
-        else:
-            merged_df = pd.DataFrame()  # 빈 데이터프레임 반환
-        return merged_df
+        try:
+            all_files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.csv')]
+            if not all_files:
+                print(f"No CSV files found in directory: {directory}")  # Log message
+                return pd.DataFrame()  # Return an empty DataFrame if no files found
+            
+            df_list = []
+            for file in all_files:
+                df = pd.read_csv(file)
+                df['time'] = pd.to_datetime(df['time'], format='%Y%m%d_%H:%M:%S')
+                df['time'] = df['time'] - pd.Timedelta(hours=7)
+                df['hour_bin'] = df['time'].dt.hour
+                if not df.empty and df.notna().sum().sum() > 0:
+                    df_list.append(df)
+            if df_list:
+                merged_df = pd.concat(df_list, ignore_index=True)
+            else:
+                merged_df = pd.DataFrame()  # Return an empty DataFrame if no valid data found
+            return merged_df
+        except FileNotFoundError:
+            print(f"Directory not found: {directory}")  # Log message if directory doesn't exist
+            return pd.DataFrame()  # Return an empty DataFrame
 
 class PlotApp:
     def __init__(self, root, config, selected_atms):
         self.root = root
+        self.root.withdraw()  # Hide the root window
+
         self.config = config
         self.selected_atms = selected_atms
         self.result_queue = queue.Queue()
         self.threads = []
         self.figures = []
-
-        self.root.title('ATM Data Viewer')
-        self.root.geometry('800x600')
 
         self.check_queue()
 
@@ -57,15 +66,16 @@ class PlotApp:
         try:
             while not self.result_queue.empty():
                 atm, df = self.result_queue.get_nowait()
-                self.create_plot_window(atm, df)
+                if not df.empty:
+                    self.create_plot_window(atm, df)
             if self.root.winfo_exists():
-                self.root.after(100, self.check_queue)  # 100ms 후에 다시 체크
+                self.root.after(100, self.check_queue)  # Check again after 100ms
         except tk.TclError:
-            # root가 이미 파괴된 경우 발생하는 예외
+            # Handle the exception if the root has been destroyed
             pass
 
     def create_plot_window(self, atm, df):
-        # Tkinter 윈도우 설정
+        # Tkinter window setup
         plot_window = tk.Toplevel(self.root)
         plot_window.title(f'ATM: {atm.ip}')
         plot_window.geometry('800x600')
@@ -101,7 +111,14 @@ class PlotApp:
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        self.figures.append(fig)  # 그래프 객체를 저장해둠
+        self.figures.append(fig)  # Store the figure object
+
+        # Handle window close event to set atm.vds_view to False
+        def on_close():
+            atm.vds_view = False
+            plot_window.destroy()
+
+        plot_window.protocol("WM_DELETE_WINDOW", on_close)
 
 def run_vds_view(configs, selected_atms):
     root = tk.Tk()
