@@ -46,8 +46,13 @@ class Intersection():
     def set_h5_files(self):
         logging_data_path = self.config['folder_path']
         self.h5_files = [f'{logging_data_path}/'+file for file in os.listdir(logging_data_path) if file.endswith('.h5')]
-
+        
     def set_atms(self):
+        metadata_path = self.config['metadata_path']
+        # metadata_folders = [os.path.join(metadata_path, name) for name in os.listdir(metadata_path) 
+        #               if os.path.isdir(os.path.join(metadata_path, name))]
+        # print(metadata_folders)
+
         for idx, h5_file in enumerate(self.h5_files):
             ip = h5_file.split('_')[-1][:-3]
             lat = self.config['radar_gps_'+ip][0]
@@ -55,10 +60,45 @@ class Intersection():
             azi_angle = self.config['radar_azi_angle_'+ip]
             atm_color = self.color_set[idx]
 
+            metadat_folder = os.path.join(metadata_path, ip)
+
+            # 각 JSON 파일을 읽어 파싱하는 부분 (UTF-8 인코딩 지정)
+            try:
+                with open(os.path.join(metadat_folder, 'radar_lane_json.json'), 'r', encoding='utf-8-sig') as f:
+                    radar_lane_json = json.load(f)['param']['setup']
+            except:
+                radar_lane_json = None
+                print(f'There is no radar_lane data | path : {metadat_folder}')
+                
+            try:
+                with open(os.path.join(metadat_folder, 'radar_zone_json.json'), 'r', encoding='utf-8-sig') as f:
+                    radar_zone_json = json.load(f)['param']['setup']
+            except:
+                radar_zone_json = None
+                print(f'There is no radar zone data | path : {metadat_folder}')
+
+            try:
+                with open(os.path.join(metadat_folder, 'image_lane_json.json'), 'r', encoding='utf-8-sig') as f:
+                    image_lane_json = json.load(f)['param']['setup']
+            except:
+                image_lane_json = None
+                print(f'There is no image lane data | path : {metadat_folder}')
+            try:
+                with open(os.path.join(metadat_folder, 'image_zone_json.json'), 'r', encoding='utf-8-sig') as f:
+                    image_zone_json = json.load(f)['param']['setup']
+            except:
+                image_zone_json = None
+                print(f'There is no image zone data | path : {metadat_folder}')
+
+            lut_lat     = None
+            lut_long    = None
+            print(radar_lane_json)
             #TODO should be removed
             if ip[-2] == '1':
                 atm_color = INDIGO
-            atm = Atm(lat, long, azi_angle, atm_color, h5_file, self.landmark, self)
+            atm = Atm(lat, long, azi_angle, atm_color, h5_file, self.landmark, 
+                      radar_lane_json, radar_zone_json, image_lane_json, image_zone_json, lut_lat, lut_long, 
+                      self)
 
             self.atms.append(atm)
 
@@ -70,7 +110,7 @@ class Intersection():
 # ATM
 
 class Atm(Intersection):
-    def __init__(self, lat, long, azi_angle, atm_color, logging_data_path, landmark, intersection):
+    def __init__(self, lat, long, azi_angle, atm_color, logging_data_path, landmark, radar_lane_json, radar_zone_json, image_lane_json, image_zone_json, lut_lat, lut_long, intersection):
 
         self.view = True
 
@@ -92,7 +132,17 @@ class Atm(Intersection):
 
         self.intersection = intersection
 
+        """ MetaData """
+        self.radar_zone_json = radar_zone_json
+        self.radar_lane_json = radar_lane_json
+        self.image_zone_json = image_zone_json
+        self.image_lane_json = image_lane_json
+        self.lut_lat = None
+        self.lut_long = None
 
+        self.zones = []
+        self.lanes = []
+        self.get_zone_lane_mode = 1
 
         # set initial value of list used to get obj info individually
         self.updated = False
@@ -103,6 +153,7 @@ class Atm(Intersection):
         # self.config = 
 
     def get_scan_data(self, current_scan, center_x, center_y):
+        
 
         current_scan_data = ScanData(current_scan, self)
         
@@ -114,6 +165,11 @@ class Atm(Intersection):
         # current_scan_data.parsing_radar_object_data()                 # 4. parse radar obj from h5 and change it to world coordinate -> TODO
         current_scan_data.parsing_image()                               # 5. parse image from h5 
 
+        current_scan_data.calc_lane_and_zone()
+        # if self.get_zone_lane_mode:
+        #     current_scan_data.calc_lane_and_zone()
+        #     self.get_zone_lane_mode = 0
+
         self.current_scan_data = current_scan_data
     
     def clear_selected_obj_id(self):
@@ -123,6 +179,14 @@ class Atm(Intersection):
 
 
 #Scan Data per ATM 
+class RadarZone:
+    def __init__(self):
+        self.left_x = []
+        self.left_y = []
+        self.right_x = []
+        self.right_y = []
+        self.step_number = 0
+
 
 class ScanData(Atm):
     def __init__(self,current_scan, atm):
@@ -142,6 +206,63 @@ class ScanData(Atm):
     def parsing_image(self):
         self.image = self.current_scan_data['Image'][()]
 
+    def calc_lane_and_zone(self):
+        if self.atm.radar_zone_json == None:
+            return 
+        self.atm.zones = []
+        self.azi_theta = self.atm_azi_angle
+
+        azi_theta = self.azi_theta * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
+
+        theta = math.pi/2 - azi_theta
+
+        transition_matrix = np.array([[math.cos(theta), - math.sin(theta), self.radar_diff_x],
+                                      [math.sin(theta), math.cos(theta), self.radar_diff_y],
+                                      [0,0,1]])
+        
+        transition_matrix2 = np.array([[1, 0, self.center_x],
+                                      [0, 1, self.center_y],
+                                      [0,0,1]])
+        # Radar zone
+        def tf(x, y, transition_matrix, transition_matrix2):
+            position = np.array([[x],[y],[1]])
+            position = np.dot(transition_matrix,position)
+            position = np.dot(transition_matrix2, position)
+            x = position[0][0]
+            y = position[1][0]
+            return x, y
+        radar_zone_count = self.atm.radar_zone_json['zone_count']
+        for nth_zone in range(radar_zone_count):
+            radar_zone_info = self.atm.radar_zone_json['detection_zone'][nth_zone]['lane_info']
+            zone = RadarZone()
+            zone.step_number = radar_zone_info['num_lane_step']
+
+            zone.left_y = np.array(radar_zone_info['lane_pos']['left_lat'])
+            zone.left_x = np.array(radar_zone_info['lane_pos']['left_long'])
+            zone.right_y = np.array(radar_zone_info['lane_pos']['right_lat'])
+            zone.right_x = np.array(radar_zone_info['lane_pos']['right_long'])
+
+
+            # zone.left_x = np.array(radar_zone_info['lane_pos']['left_lat'])
+            # zone.left_y = np.array(radar_zone_info['lane_pos']['left_long'])
+            # zone.right_x = np.array(radar_zone_info['lane_pos']['right_lat'])
+            # zone.right_y = np.array(radar_zone_info['lane_pos']['right_long'])
+
+            zone.left_x = (-1) * zone.left_x
+            zone.right_x = (-1) * zone.right_x
+            
+            for idx in range(zone.step_number):
+                zone.left_x[idx]  = meters_to_pixels(zone.left_x[idx], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+                zone.left_y[idx]  = meters_to_pixels(zone.left_y[idx], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+                zone.right_x[idx] = meters_to_pixels(zone.right_x[idx], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+                zone.right_y[idx] = meters_to_pixels(zone.right_y[idx], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+
+                zone.left_x[idx], zone.left_y[idx] = tf(zone.left_x[idx], zone.left_y[idx], transition_matrix, transition_matrix2)
+                zone.right_x[idx], zone.right_y[idx] = tf(zone.right_x[idx], zone.right_y[idx], transition_matrix, transition_matrix2)
+                
+            self.atm.zones.append(zone)
+
+        # Radar lane
 
     def parsing_fusion_object_data(self):
         self.fusion_object_data = []

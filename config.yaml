@@ -3,24 +3,25 @@ fps: 15
 verona:
   esterno:
     atm_nun: 6
-    folder_path: C:/kcity_loggingdata/datas/esterno
+    folder_path: D:\k-city\good_verona\datas\esterno
     intersection_center_gps:
     - 45.4305233
     - 10.9877399
     intersection_idx: 2
     intersection_map_zoom: 19
-    radar_azi_angle_1.0.0.20: 7
-    radar_azi_angle_1.0.0.21: 19
+    metadata_path: D:\k-city\good_verona\datas\metadata_logging\metadata_logging
+    radar_azi_angle_1.0.0.20: 9
+    radar_azi_angle_1.0.0.21: 18
     radar_azi_angle_1.0.0.22: 67
     radar_azi_angle_1.0.0.23: 0
     radar_azi_angle_1.0.0.24: 246.71
     radar_azi_angle_1.0.0.25: -27.1
     radar_gps_1.0.0.20:
-    - 45.4307873
-    - 10.9877108
+    - 45.43072430000016
+    - 10.98769880000001
     radar_gps_1.0.0.21:
-    - 45.43011880689087
-    - 10.987970009527661
+    - 45.430227500000164
+    - 10.987823700000048
     radar_gps_1.0.0.22:
     - 45.430359
     - 10.9882485
@@ -28,8 +29,8 @@ verona:
     - 45.430319
     - 10.9883385
     radar_gps_1.0.0.24:
-    - 45.4307813
-    - 10.9878318
+    - 45.43077730000001
+    - 10.987771800000045
     radar_gps_1.0.0.25:
     - 45.4301545
     - 10.9879317
@@ -75,12 +76,13 @@ verona:
           outgoing: 0
   interno:
     atm_nun: 4
-    folder_path: C:\kcity_loggingdata\datas\interno
+    folder_path: D:\k-city\good_verona\datas\interno
     intersection_center_gps:
     - 45.4316523
     - 10.988251
     intersection_idx: 1
     intersection_map_zoom: 19
+    metadata_path: D:\k-city\good_verona\datas\metadata_logging\metadata_logging
     radar_azi_angle_1.0.0.10: 0
     radar_azi_angle_1.0.0.11: 0
     radar_azi_angle_1.0.0.12: 157.36

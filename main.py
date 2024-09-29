@@ -16,6 +16,11 @@ def run_pygame(config):
     screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
 
+    # Model
+    
+    model.get_logging_data()    
+    model.set_min_max_scan()
+    
     # View
     viewer = MainViewer(model, screen)
     model.get_logging_data()
@@ -24,7 +29,7 @@ def run_pygame(config):
 
     # Controller
     event_controller = MainController(model, viewer)
-
+ 
     clock = pygame.time.Clock()
     viewer.current_scan = model.min_scan
     viewer.before_scan = viewer.current_scan
@@ -35,9 +40,10 @@ def run_pygame(config):
             viewer.before_scan = viewer.current_scan
             model.load_data(viewer.current_scan)
         viewer.draw()
-        pygame.display.flip()
+        # pygame.display.flip() # 화면 업데이트
+        pygame.display.update()
 
-        clock.tick(config['fps'])
+        clock.tick(config['fps']) 
 
         if not viewer.paused:
             viewer.current_scan += 1
