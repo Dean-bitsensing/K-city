@@ -2,6 +2,7 @@ import pygame
 import os
 import yaml
 from .UI_windows import *
+from .UI_windows2 import *
 from .UI_save_window import *
 
 SKIP_SIZE = 1
@@ -188,15 +189,16 @@ class MainController:
         result = create_window()
         if result:
             config = load_yaml('config.yaml')
-            print('successfully saved')
+            
             for intersection in self.model.intersections:
                 for atm in intersection.atms:
-                    if atm.updated:
+                    # if atm.updated:
                         config['verona'][intersection.name]['radar_gps_' + atm.ip][0] = atm.atm_lat
                         config['verona'][intersection.name]['radar_gps_' + atm.ip][1] = atm.atm_long
                         config['verona'][intersection.name]['radar_azi_angle_' + atm.ip] = atm.atm_azi_angle
 
             save_yaml('config.yaml', config)
+            print('successfully saved')
             self.viewer.running = False
         else:
             print("ㅠㅠ")
@@ -210,7 +212,9 @@ class MainController:
                         selected_atms.append(atm)
 
             start_vds_view(self.model.config, selected_atms)
-        if self.model.save_button_model.is_clicked(mouse_pos):
+        elif self.model.vds_node_button_model.is_clicked(mouse_pos):
+            start_node_vds_view(self.model.config)
+        elif self.model.save_button_model.is_clicked(mouse_pos):
             self.handle_save()
 
             

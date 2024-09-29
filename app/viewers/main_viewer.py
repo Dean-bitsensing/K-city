@@ -25,6 +25,7 @@ class MainViewer:
         
         self.cam_return_button = CamReturnButtonView(self.model.cam_return_button_model, self.screen)
         self.vds_data_button = InfoButtonView(self.model.vds_button_model, self.screen)
+        self.vds_node_data_button = InfoButtonView(self.model.vds_node_button_model, self.screen)
         self.save_change_button = InfoButtonView(self.model.save_button_model, self.screen)
         self.data_info_window = DataInfoWindowView(self.model.data_info_window_model,self.screen)
 
@@ -54,6 +55,7 @@ class MainViewer:
             self.cam_return_button.draw_return_button()
         
         self.vds_data_button.draw_return_button()
+        self.vds_node_data_button.draw_return_button()
         self.save_change_button.draw_return_button()
         self.data_info_window.draw_data_info_window()
         self.data_info_window.draw_selected_atms_in_info_model(self.model.intersections)

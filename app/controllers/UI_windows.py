@@ -111,7 +111,7 @@ class PlotAppThread(threading.Thread):
         plot_window = tk.Toplevel(self.root)
         plot_window.title(f'ATM: {atm.ip}')
 
-        plot_window.geometry('1600x1200')
+        plot_window.geometry('1600x1300')
         fig, axs = plt.subplots(2, 2, figsize=(16, 12))
 
         self.axs = axs.flatten()
@@ -126,8 +126,28 @@ class PlotAppThread(threading.Thread):
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
+        # Add Save button
+        save_button = tk.Button(plot_window, text="Save as PNG", command=self.save_as_png)
+        save_button.pack(side=tk.BOTTOM, pady=10)
+
         plot_window.bind('<Key>', self.on_key_press)
         plot_window.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def save_as_png(self):
+    # Generate file name based on date range and atm information
+        start_date, end_date = self.date_range
+        directory = 'graph'
+
+        # Create the directory if it doesn't exist
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        # Full path with the graph/ directory
+        filename = os.path.join(directory, f'{self.atm.ip}_{start_date}_to_{end_date}.png')
+
+    # Save the figure to a PNG file
+        self.fig.savefig(filename)
+        print(f"Graph saved as {filename}")
 
     def on_key_press(self, event):
         if event.char.isdigit():
@@ -175,15 +195,13 @@ class PlotAppThread(threading.Thread):
                     ax.plot(counts.index, counts, label=f'{direction.capitalize()} (Lane {lane})')
                     total_data = total_data.add(counts, fill_value=0)
 
-        # Ensure total_data covers all hour_bins by filling missing hours with the sum of available data
         total_data = total_data.reindex(hour_bins, fill_value=0)
 
-        # Plot the total data after processing all lanes
         ax.plot(total_data.index, total_data, color='red', label='Total', linestyle='--')
 
         start_date, end_date = self.date_range
         ax.set_title(f'{title} Vehicles by Hour\n({start_date} to {end_date})')
-        ax.set_xlabel('Time')
+        ax.set_xlabel('Time of Day (TOD)')
         ax.set_ylabel('Number of Vehicles')
         ax.grid(True)
         ax.set_xticks(hour_bins)

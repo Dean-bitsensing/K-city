@@ -9,32 +9,31 @@ verona:
     - 10.9877399
     intersection_idx: 2
     intersection_map_zoom: 19
-    radar_azi_angle_1.0.0.20: 246.71
-    radar_azi_angle_1.0.0.21: 0
-    radar_azi_angle_1.0.0.22: -27.1
-    radar_azi_angle_1.0.0.23: 19
-    radar_azi_angle_1.0.0.24: 7
-    radar_azi_angle_1.0.0.25: 67
+    radar_azi_angle_1.0.0.20: 7
+    radar_azi_angle_1.0.0.21: 19
+    radar_azi_angle_1.0.0.22: 67
+    radar_azi_angle_1.0.0.23: 0
+    radar_azi_angle_1.0.0.24: 246.71
+    radar_azi_angle_1.0.0.25: -27.1
     radar_gps_1.0.0.20:
-    - 45.4307813
-    - 10.9878318
-    radar_gps_1.0.0.21:
-    - 45.430319
-    - 10.9883385
-    radar_gps_1.0.0.22:
-    - 45.4301545
-    - 10.9879317
-    radar_gps_1.0.0.23:
-    - 45.430174806890726
-    - 10.987974009527658
-    radar_gps_1.0.0.24:
     - 45.4307873
     - 10.9877108
-    radar_gps_1.0.0.25:
+    radar_gps_1.0.0.21:
+    - 45.43011880689087
+    - 10.987970009527661
+    radar_gps_1.0.0.22:
     - 45.430359
     - 10.9882485
+    radar_gps_1.0.0.23:
+    - 45.430319
+    - 10.9883385
+    radar_gps_1.0.0.24:
+    - 45.4307813
+    - 10.9878318
+    radar_gps_1.0.0.25:
+    - 45.4301545
+    - 10.9879317
   info:
-    data_path: C:\kcity_loggingdata\data
     API_KEY: AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw
     UTM_zone_32N: epsg:32652
     WGS84: epsg:4326
@@ -42,8 +41,36 @@ verona:
     center_gps:
     - 45.4310364
     - 10.988078
+    data_path: C:\kcity_loggingdata\data
     intersection_num: 2
     map_zoom: 18
+    node:
+      esterno:
+        node0:
+          oncoming: 1.0.0.21
+          outgoing: 1.0.0.25
+        node1:
+          oncoming: 1.0.0.22
+          outgoing: 1.0.0.22
+        node2:
+          oncoming: 0
+          outgoing: 0
+        node3:
+          oncoming: 1.0.0.24
+          outgoing: 1.0.0.24
+      interno:
+        node0:
+          oncoming: 0
+          outgoing: 0
+        node1:
+          oncoming: 0
+          outgoing: 0
+        node2:
+          oncoming: 0
+          outgoing: 0
+        node3:
+          oncoming: 0
+          outgoing: 0
   interno:
     atm_nun: 4
     folder_path: C:\kcity_loggingdata\datas\interno
