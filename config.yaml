@@ -2,14 +2,14 @@ api_key: AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw
 fps: 15
 verona:
   esterno:
-    atm_nun: 6
-    folder_path: D:\k-city\good_verona\datas\esterno
+    atm_num: 6  # Changed from atm_nun
+    folder_path: "C:\\kcity_loggingdata\\datas\\esterno"  # Escaped backslashes
     intersection_center_gps:
     - 45.4305233
     - 10.9877399
     intersection_idx: 2
     intersection_map_zoom: 19
-    metadata_path: D:\k-city\good_verona\datas\metadata_logging\metadata_logging
+    metadata_path: "C:\\kcity_loggingdata\\metadata_logging"  # Escaped backslashes
     radar_azi_angle_1.0.0.20: 9
     radar_azi_angle_1.0.0.21: 18
     radar_azi_angle_1.0.0.22: 67
@@ -42,7 +42,7 @@ verona:
     center_gps:
     - 45.4310364
     - 10.988078
-    data_path: C:\kcity_loggingdata\data
+    data_path: 'C:\\kcity_loggingdata\\data'  # Escaped backslashes
     intersection_num: 2
     map_zoom: 18
     node:
@@ -75,14 +75,14 @@ verona:
           oncoming: 1.0.0.12
           outgoing: 0
   interno:
-    atm_nun: 4
-    folder_path: D:\k-city\good_verona\datas\interno
+    atm_num: 4  # Changed from atm_nun
+    folder_path: "C:\\kcity_loggingdata\\datas\\interno"  # Escaped backslashes
     intersection_center_gps:
     - 45.4316523
     - 10.988251
     intersection_idx: 1
     intersection_map_zoom: 19
-    metadata_path: D:\k-city\good_verona\datas\metadata_logging\metadata_logging
+    metadata_path: "C:\\kcity_loggingdata\\metadata_logging"  # Escaped backslashes
     radar_azi_angle_1.0.0.10: 0
     radar_azi_angle_1.0.0.11: 0
     radar_azi_angle_1.0.0.12: 157.36

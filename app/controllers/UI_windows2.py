@@ -253,6 +253,8 @@ class NodePlotApp:
 
     def update_graphs(self):
         total_max_y_value = 3000 # Fixed maximum Y value
+        total_max_y_value = 1000 # Fixed maximum Y value
+        total_max_y_value = 2000 # Fixed maximum Y value
 
         hour_bins = range(24)
         x_ticks = [f"{i:02d}:00" for i in range(24)]
