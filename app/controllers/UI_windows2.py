@@ -6,19 +6,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import simpledialog
+from .tk_manager import tk_manager
 
-class TkinterAppManager:
-    def __init__(self):
-        self.root = None
-
-    def run_tkinter_app(self, app_func, *args, **kwargs):
-        """메인 스레드에서 Tkinter 앱 실행"""
-        if self.root is None:
-            self.root = tk.Tk()
-            self.root.withdraw()
-        app_func(self.root, *args, **kwargs)
-
-tk_manager = TkinterAppManager()
 
 def capitalize_first_letter(string):
     if len(string) == 0:
@@ -228,7 +217,7 @@ class NodePlotApp:
 
     def save_as_png(self):
         start_date, end_date = self.date_range
-        directory = 'graph'
+        directory = 'vds_graph'
 
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -253,8 +242,6 @@ class NodePlotApp:
 
     def update_graphs(self):
         total_max_y_value = 3000 # Fixed maximum Y value
-        total_max_y_value = 1000 # Fixed maximum Y value
-        total_max_y_value = 2000 # Fixed maximum Y value
 
         hour_bins = range(24)
         x_ticks = [f"{i:02d}:00" for i in range(24)]

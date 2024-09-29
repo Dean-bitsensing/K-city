@@ -7,7 +7,7 @@ from scipy.spatial.distance import cdist
 from .window_model import WindowModel
 from .map_grid_model import MapGridModel
 from .camera_display_model import CameraDisplayModel
-from .button_models import CameraReturnButton, CameraLeftButton, CameraRightButton, VDSDataButton, VDSNodeDataButton, SaveChangeButton
+from .button_models import CameraReturnButton, CameraLeftButton, CameraRightButton, VDSDataButton, VDSNodeDataButton, SaveChangeButton, IDSDataButton
 from .info_window_model import InfoWindowModel
 from.data_models import *
 from scipy.optimize import minimize
@@ -80,6 +80,7 @@ class MainModel:
         self.cam_return_button_model = CameraReturnButton()
         self.vds_button_model = VDSDataButton()
         self.vds_node_button_model = VDSNodeDataButton()
+        self.ids_button_model = IDSDataButton()
         self.save_button_model = SaveChangeButton()
         self.data_info_window_model = InfoWindowModel()
         
@@ -94,6 +95,7 @@ class MainModel:
         self.cam_return_button_model.update(width, length)
         self.vds_button_model.update(width, length)
         self.vds_node_button_model.update(width, length)
+        self.ids_button_model.update(width,length)
         self.save_button_model.update(width,length)
         self.data_info_window_model.update(width, length)
 

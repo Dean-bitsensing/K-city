@@ -3,7 +3,9 @@ import os
 import yaml
 from .UI_windows import *
 from .UI_windows2 import *
+from .UI_window_ids_zone import *
 from .UI_save_window import *
+from .tk_manager import tk_manager
 
 SKIP_SIZE = 1
 BIG_SKIP_SIZE = 20
@@ -214,6 +216,8 @@ class MainController:
             start_vds_view(self.model.config, selected_atms)
         elif self.model.vds_node_button_model.is_clicked(mouse_pos):
             start_node_vds_view(self.model.config)
+        elif self.model.ids_button_model.is_clicked(mouse_pos):
+            tk_manager.run_tkinter_app(main_app)
         elif self.model.save_button_model.is_clicked(mouse_pos):
             self.handle_save()
 
