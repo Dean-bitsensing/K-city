@@ -45,6 +45,33 @@ verona:
     data_path: C:\kcity_loggingdata\data
     intersection_num: 2
     map_zoom: 18
+    node:
+      esterno:
+        node0:
+          oncoming: 1.0.0.21
+          outgoing: 1.0.0.25
+        node1:
+          oncoming: 1.0.0.22
+          outgoing: 1.0.0.22
+        node2:
+          oncoming: 0
+          outgoing: 0
+        node3:
+          oncoming: 1.0.0.24
+          outgoing: 1.0.0.24
+      interno:
+        node0:
+          oncoming: 0
+          outgoing: 0
+        node1:
+          oncoming: 0
+          outgoing: 0
+        node2:
+          oncoming: 0
+          outgoing: 0
+        node3:
+          oncoming: 0
+          outgoing: 0
   interno:
     atm_nun: 4
     folder_path: D:\k-city\good_verona\datas\interno
