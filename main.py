@@ -41,8 +41,8 @@ def run_pygame(config):
             viewer.before_scan = viewer.current_scan
             model.load_data(viewer.current_scan)
         viewer.draw()
-        pygame.display.flip() # 화면 업데이트
-        # pygame.display.update()
+        # pygame.display.flip() # 화면 업데이트
+        pygame.display.update()
 
         clock.tick(config['fps']) 
         

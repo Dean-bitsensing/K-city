@@ -34,11 +34,12 @@ class MainViewer:
 
     def draw(self):      
         self.background_image.draw_background_image()
-        self.grid.draw_grid()
+        # self.grid.draw_grid()
         self.radar_postions.draw_radar_positions()
         # self.radar_postions.draw_vision_object()
         self.radar_postions.draw_fusion_object()
         self.radar_postions.draw_fusion_object_index()
+        self.radar_postions.draw_radar_zone()
 
         if self.delete_mode:
             self.data_info_window.draw_delete_info()
@@ -234,8 +235,35 @@ class MultipleRadarPositionView:
             check_y = True
 
         return check_x and check_y
-        
-        
+    
+    # def draw_radar_lane(self):
+    #     for intersection in self.model.intersections:
+    #         for atm in intersection.atms:
+
+
+    def draw_radar_zone(self):
+        for intersection in self.model.intersections:
+            for atm in intersection.atms:
+                if atm.radar_zone_json == None:
+                    continue
+                for zone in atm.zones:
+                    for step in range(zone.step_number-1):
+                        left_point_start = (zone.left_x[step],zone.left_y[step])
+                        left_point_end = (zone.left_x[step+1],zone.left_y[step+1])
+                        right_point_start = (zone.right_x[step],zone.right_y[step])
+                        right_point_end = (zone.right_x[step+1],zone.right_y[step+1])
+                        pygame.draw.line(self.screen, atm.color, left_point_start, left_point_end, 3)
+                        pygame.draw.line(self.screen, atm.color, right_point_start, right_point_end, 3)
+
+                    left_start_point = (zone.left_x[0],zone.left_y[0])
+                    right_start_point = (zone.right_x[0],zone.right_y[0])
+
+                    left_end_point = (zone.left_x[zone.step_number-1],zone.left_y[zone.step_number-1])
+                    right_end_point = (zone.right_x[zone.step_number-1],zone.right_y[zone.step_number-1])                    
+
+                    pygame.draw.line(self.screen, atm.color, left_start_point, right_start_point, 3)
+                    pygame.draw.line(self.screen, atm.color, left_end_point, right_end_point, 3)
+
     def draw_radar_positions(self):
         for intersection in self.model.intersections:
             for atm in intersection.atms:
