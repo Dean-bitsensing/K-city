@@ -186,6 +186,7 @@ class RadarZone:
         self.right_x = []
         self.right_y = []
         self.step_number = 0
+        self.guid :str = None
 
 
 class ScanData(Atm):
@@ -232,9 +233,11 @@ class ScanData(Atm):
             y = position[1][0]
             return x, y
         radar_zone_count = self.atm.radar_zone_json['zone_count']
+
         for nth_zone in range(radar_zone_count):
             radar_zone_info = self.atm.radar_zone_json['detection_zone'][nth_zone]['lane_info']
             zone = RadarZone()
+            zone.guid = radar_zone_info['guid']
             zone.step_number = radar_zone_info['num_lane_step']
 
             zone.left_y = np.array(radar_zone_info['lane_pos']['left_lat'])

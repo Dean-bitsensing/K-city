@@ -268,6 +268,15 @@ class MultipleRadarPositionView:
                     pygame.draw.line(self.screen, atm.color, left_start_point, right_start_point, 3)
                     pygame.draw.line(self.screen, atm.color, left_end_point, right_end_point, 3)
 
+                    font = pygame.font.Font(None, 20)
+                    # text = font.render(atm.ip, True, self.model.cam_bound_model.cam_ip_box_color)  # 렌더링할 텍스트와 색상
+                    
+                    # 텍스트를 렌더링 (안티앨리어싱: True, 색상: 흰색)
+                    text_surface = font.render(zone.guid, True, (0, 255, 0))
+
+                    # 텍스트를 pos 위치에 그리기
+                    self.screen.blit(text_surface, left_start_point)
+
     def draw_radar_positions(self):
         for intersection in self.model.intersections:
             for atm in intersection.atms:
