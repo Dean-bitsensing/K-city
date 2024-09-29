@@ -34,7 +34,7 @@ verona:
     - 45.430359
     - 10.9882485
   info:
-    data_path: C:\kcity_loggingdata
+    data_path: C:\kcity_loggingdata\data
     API_KEY: AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw
     UTM_zone_32N: epsg:32652
     WGS84: epsg:4326
