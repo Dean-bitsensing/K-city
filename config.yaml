@@ -47,7 +47,9 @@ verona:
     node:
       esterno:
         node0:
-          oncoming: 1.0.0.21
+          oncoming: 
+          - 1.0.0.21
+          - 1.0.0.20
           outgoing: 1.0.0.25
         node1:
           oncoming: 1.0.0.22
@@ -69,7 +71,7 @@ verona:
           oncoming: 0
           outgoing: 0
         node3:
-          oncoming: 0
+          oncoming: 1.0.0.12
           outgoing: 0
   interno:
     atm_nun: 4
