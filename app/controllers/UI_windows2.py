@@ -7,12 +7,14 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import simpledialog
 from .tk_manager import tk_manager
+import numpy as np
 
 
 def capitalize_first_letter(string):
     if len(string) == 0:
         return string
     return string[0].upper() + string[1:]
+
 
 def create_ip_to_intersection_mapping(config_verona):
     ip_to_intersection = {}
@@ -23,6 +25,7 @@ def create_ip_to_intersection_mapping(config_verona):
                 ip = key[len('radar_gps_'):]
                 ip_to_intersection[ip] = intersection_name
     return ip_to_intersection
+
 
 def get_ips_for_nodes(config_verona, intersection_name, node_numbers):
     ips = set()
@@ -45,10 +48,12 @@ def get_ips_for_nodes(config_verona, intersection_name, node_numbers):
                 ips.add(outgoing_ip)
     return list(ips)
 
+
 def map_lanes(df, ip):
     if ip == '1.0.0.20':
         df['lane'] = df['lane'].astype(int) + 1
     return df
+
 
 class NodeDataProcessingThread(threading.Thread):
     def __init__(self, config_verona, ips, result_queue, start_date, day):
@@ -119,6 +124,7 @@ class NodeDataProcessingThread(threading.Thread):
         else:
             return pd.DataFrame(), date_range
 
+
 class NodePlotApp:
     def __init__(self, config_verona, intersection_name, node_numbers, start_date, day):
         self.config_verona = config_verona
@@ -150,6 +156,8 @@ class NodePlotApp:
 
         self.root.bind("<Configure>", self.on_resize)
 
+        self.hover_annotation = None  # Placeholder for hover annotation
+
         self.root.after(100, self.check_queue)
 
         self.root.mainloop()
@@ -172,26 +180,35 @@ class NodePlotApp:
         self.weekday_data = df[df['weekday'] < 5]   # Monday (0) to Friday (4)
 
         self.lane_data = {'weekend': {}, 'weekday': {}}
+        self.total_data = {'weekend': {}, 'weekday': {}}  # Store total data separately
         self.active_lanes = {}
 
+        # Get unique days for computing averages
         self.num_weekend_days = len(self.weekend_data['time'].dt.date.unique())
         self.num_weekday_days = len(self.weekday_data['time'].dt.date.unique())
 
-        for (lane, direction), group_df in df.groupby(['lane', 'direction']):
-            if direction not in ['oncoming', 'outgoing']:
-                continue
-
-            key = (str(lane), direction)
-            self.active_lanes[key] = True
-
+        # Process each lane and calculate average per day
         for dataset_name, dataset in {'weekend': self.weekend_data, 'weekday': self.weekday_data}.items():
+            # Group by hour and calculate the average count per hour across the days
+            total_counts = dataset.groupby('hour_bin')['count'].sum() / max(len(dataset['time'].dt.date.unique()), 1)
+
+            # Store total counts (daily average)
+            self.total_data[dataset_name] = total_counts
+
+            # Process each lane separately
             for (lane, direction), group_df in dataset.groupby(['lane', 'direction']):
-                key = (str(lane), direction)
                 if direction in ['oncoming', 'outgoing']:
+                    key = (str(lane), direction)
+                    lane_avg_counts = group_df.groupby('hour_bin')['count'].sum() / max(len(group_df['time'].dt.date.unique()), 1)
+
+                    # Store lane-specific average data
                     if key in self.lane_data[dataset_name]:
                         self.lane_data[dataset_name][key] = pd.concat([self.lane_data[dataset_name][key], group_df])
                     else:
                         self.lane_data[dataset_name][key] = group_df
+
+                    # Mark the lane as active
+                    self.active_lanes[key] = True
 
     def create_total_lane_plot_window(self):
         ips_str = ', '.join(self.ips)
@@ -208,6 +225,9 @@ class NodePlotApp:
         canvas = FigureCanvasTkAgg(fig, master=self.root)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+        # Connect the click event to show tooltip
+        canvas.mpl_connect("button_press_event", self.on_click)
 
         save_button = tk.Button(self.root, text="Save as PNG", command=self.save_as_png)
         save_button.pack(side=tk.BOTTOM, pady=10)
@@ -241,7 +261,7 @@ class NodePlotApp:
         self.update_graphs()
 
     def update_graphs(self):
-        total_max_y_value = 3000 # Fixed maximum Y value
+        total_max_y_value = 3000  # Fixed maximum Y value
 
         hour_bins = range(24)
         x_ticks = [f"{i:02d}:00" for i in range(24)]
@@ -253,34 +273,29 @@ class NodePlotApp:
             ax.set_ylim(0, total_max_y_value)
             ax.set_yticks(range(0, total_max_y_value + grid_interval, grid_interval))
 
-        # Plot data for each lane
-        self.plot_lane_data(self.lane_data['weekday'], 'oncoming', self.axs[0], 'Weekday Oncoming', hour_bins, x_ticks)
-        self.plot_lane_data(self.lane_data['weekday'], 'outgoing', self.axs[1], 'Weekday Outgoing', hour_bins, x_ticks)
-        self.plot_lane_data(self.lane_data['weekend'], 'oncoming', self.axs[2], 'Weekend Oncoming', hour_bins, x_ticks)
-        self.plot_lane_data(self.lane_data['weekend'], 'outgoing', self.axs[3], 'Weekend Outgoing', hour_bins, x_ticks)
+        # Plot data for each lane and total line
+        self.plot_lane_data(self.lane_data['weekday'], 'oncoming', self.axs[0], 'Weekday Oncoming', hour_bins, x_ticks, 'weekday')
+        self.plot_lane_data(self.lane_data['weekday'], 'outgoing', self.axs[1], 'Weekday Outgoing', hour_bins, x_ticks, 'weekday')
+        self.plot_lane_data(self.lane_data['weekend'], 'oncoming', self.axs[2], 'Weekend Oncoming', hour_bins, x_ticks, 'weekend')
+        self.plot_lane_data(self.lane_data['weekend'], 'outgoing', self.axs[3], 'Weekend Outgoing', hour_bins, x_ticks, 'weekend')
 
         plt.tight_layout()
         self.fig.canvas.draw()
 
-    def plot_lane_data(self, lane_data, direction, ax, title, hour_bins, x_ticks):
-        total_data = pd.Series(0, index=hour_bins)
+    def plot_lane_data(self, lane_data, direction, ax, title, hour_bins, x_ticks, dataset_name):
+        total_counts = self.total_data[dataset_name]  # Get the precomputed total average counts
 
         for (lane, lane_direction), is_active in self.active_lanes.items():
             if lane_direction == direction and is_active:
                 key = (str(lane), direction)
                 if key in lane_data:
                     lane_df = lane_data[key]
-                    counts = lane_df.groupby('hour_bin')['count'].sum()
-
-                    # Calculate average if needed
-                    counts = counts / max(self.num_weekday_days, 1) if direction == 'weekday' else counts / max(self.num_weekend_days, 1)
+                    counts = lane_df.groupby('hour_bin')['count'].sum() / max(self.num_weekday_days if dataset_name == 'weekday' else self.num_weekend_days, 1)
 
                     ax.plot(counts.index, counts, label=f'{direction.capitalize()} (Lane {lane})')
-                    total_data = total_data.add(counts, fill_value=0)
 
-        total_data = total_data.reindex(hour_bins, fill_value=0)
-
-        ax.plot(total_data.index, total_data, color='red', label='Total', linestyle='--')
+        # Plot the total data as a dotted line (daily average)
+        ax.plot(total_counts.index, total_counts, color='red', label='Total (Average)', linestyle='--')
 
         start_date, end_date = self.date_range
         ax.set_title(f'{title} Vehicles by Hour\n({start_date} to {end_date})')
@@ -308,9 +323,55 @@ class NodePlotApp:
         plt.tight_layout()
         self.fig.canvas.draw()
 
+    def on_click(self, event):
+        """Show y-value on click near data points."""
+        if event.inaxes is None or event.xdata is None or event.ydata is None:
+            return
+
+        ax = event.inaxes
+        closest_point = None
+        closest_distance = float('inf')  # Initialize to a large value
+
+        # Iterate through all lines in the axis, including the total line
+        for line in ax.lines:
+            x_data, y_data = line.get_xdata(), line.get_ydata()
+            for i, (x, y) in enumerate(zip(x_data, y_data)):
+                # Calculate Euclidean distance from click to data point
+                distance = np.sqrt((event.xdata - x) ** 2 + (event.ydata - y) ** 2)
+                if distance < closest_distance:
+                    closest_distance = distance
+                    closest_point = (x, y)
+
+        # Only display annotation if close enough to a point (adjust proximity threshold)
+        if closest_point and closest_distance < 10:
+            if self.hover_annotation:
+                self.hover_annotation.remove()
+
+            # Get limits of the axes (to prevent annotation from going outside plot area)
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+
+            # Determine the text position slightly above the clicked point
+            # Adjust the offsets to ensure the annotation stays within plot boundaries
+            x_pos = min(max(event.xdata, xlim[0]), xlim[1])  # Keep within x-axis limits
+            y_pos = min(max(event.ydata + 0.05 * (ylim[1] - ylim[0]), ylim[0]), ylim[1])  # Offset 5% above, within y limits
+
+            # Create annotation directly relative to click
+            self.hover_annotation = ax.annotate(
+                f'{int(closest_point[1])}',
+                xy=(event.xdata, event.ydata),  # Position annotation exactly at the clicked point
+                xytext=(x_pos, y_pos),  # Place the text slightly above the clicked point
+                textcoords="data",  # The text is in the same data coordinates as the graph
+                ha='center',
+                va='bottom',
+                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="white")
+            )
+            self.fig.canvas.draw_idle()
+
     def on_close(self):
         self.root.quit()
         self.root.destroy()
+
 
 def start_node_vds_view(config_verona):
     def launch_view(root):
@@ -339,6 +400,7 @@ def start_node_vds_view(config_verona):
 
     tk_manager.run_tkinter_app(launch_view)
 
+
 class IntersectionSelectionDialog(tk.simpledialog.Dialog):
     def __init__(self, parent):
         super().__init__(parent, title="Select Intersection")
@@ -352,6 +414,7 @@ class IntersectionSelectionDialog(tk.simpledialog.Dialog):
 
     def apply(self):
         self.result = self.var.get()
+
 
 class NodeSelectionDialog(tk.simpledialog.Dialog):
     def __init__(self, parent, title, node_keys):
