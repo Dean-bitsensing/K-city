@@ -16,10 +16,6 @@ def run_pygame(config):
     screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
 
-    # Model
-    
-    model.get_logging_data()    
-    model.set_min_max_scan()
     
     # View
     viewer = MainViewer(model, screen)

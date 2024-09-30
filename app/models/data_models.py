@@ -99,8 +99,8 @@ class Intersection():
             atm = Atm(lat, long, azi_angle, atm_color, h5_file, self.landmark, 
                       radar_lane_json, radar_zone_json, image_lane_json, image_zone_json, lut_lat, lut_long, 
                       self)
-
-            self.atms.append(atm)
+            if atm not in self.atms:
+                self.atms.append(atm)
 
     def set_intersection_center_gps(self):
         self.intersection_lat = self.config['center_gps'][0]

@@ -217,7 +217,7 @@ class MainController:
         elif self.model.vds_node_button_model.is_clicked(mouse_pos):
             start_node_vds_view(self.model.config)
         elif self.model.ids_button_model.is_clicked(mouse_pos):
-            tk_manager.run_tkinter_app(main_app)
+            start_ids_view()
         elif self.model.save_button_model.is_clicked(mouse_pos):
             self.handle_save()
 
