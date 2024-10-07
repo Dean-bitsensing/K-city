@@ -11,7 +11,7 @@ from .button_models import CameraReturnButton, CameraLeftButton, CameraRightButt
 from .info_window_model import InfoWindowModel
 from.data_models import *
 from scipy.optimize import minimize
-
+from .fusion import *
 class MainModel:
     def __init__(self, config):
 
@@ -69,7 +69,8 @@ class MainModel:
             for atm in intersection.atms:
                 atm.get_scan_data(current_scan, self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
 
-
+    def fusion(self):
+        return fusion_main(self.config['info']['h5_data_path'])
 
     def init_model_class(self):
         self.window_model = WindowModel()

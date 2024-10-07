@@ -1,5 +1,6 @@
 import pygame
-
+import math
+import numpy as np
 
 class MainViewer:
     def __init__(self, model, screen):
@@ -19,6 +20,7 @@ class MainViewer:
 
         self.grid = GridView(self.model.grid_model, self.screen)
         self.radar_postions = MultipleRadarPositionView(self.model,self.screen)
+        self.kcity_fusion = KCityFusionObjView(self.model, self.screen)
         self.cambound = CamBoundView(self.model.cam_bound_model, self.screen)
         self.cam_left_button = CamChangeLeftButtonView(self.model.cam_change_left_button_model, self.screen)
         self.cam_right_button = CamChangeRightButtonView(self.model.cam_change_right_button_model, self.screen)
@@ -63,6 +65,8 @@ class MainViewer:
         self.data_info_window.draw_data_info_window()
         self.data_info_window.draw_selected_atms_in_info_model(self.model.intersections)
         
+    def draw_fusion_obj(self, current_scan_kcity_fusion_obj):
+        self.kcity_fusion.draw_kobj(current_scan_kcity_fusion_obj)
     
 
 class GridView:
@@ -223,7 +227,103 @@ class BackGroundImageView:
         pygame.draw.circle(self.screen, self.model.center_point_color, (self.center_x, self.center_y), 5, 0)
 
 
+class KCityFusionObjView:
+    def __init__(self, model, screen):
+        self.model = model
+        self.screen = screen
+
+        #TODO
+        self.landmark = [45.4310364, 10.988078]
+        self.center_x = self.model.window_model.GRID_WINDOW_WIDTH//2
+        self.center_y = self.model.window_model.GRID_WINDOW_LENGTH//2
+
+
+    def check_in_grid_window(self, x, y):
+        check_x = False
+        check_y = False
+        if 0 < x < self.model.window_model.GRID_WINDOW_WIDTH:
+            check_x = True
         
+        if 0 < y < self.model.window_model.GRID_WINDOW_LENGTH:
+            check_y = True
+
+        return check_x and check_y
+    
+    def draw_kobj(self, current_scan_kcity_fusion_obj):
+        for kobj in current_scan_kcity_fusion_obj:
+            white = (255,255,255)
+            posx =  kobj.posx 
+            posy = - kobj.posy 
+            width = kobj.width 
+            length = kobj.length 
+            ul_pos = [int(posx - length/2), int(posy - width/2)]
+            ur_pos = [int(posx - length/2), int(posy + width/2)]
+            dl_pos = [int(posx + length/2), int(posy - width/2)]
+            dr_pos = [int(posx + length/2), int(posy + width/2)]
+
+            posx = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            posy = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+            ul_pos[0] = self.meters_to_pixels(ul_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[1] = self.meters_to_pixels(ul_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[0] = self.meters_to_pixels(ur_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[1] = self.meters_to_pixels(ur_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[0] = self.meters_to_pixels(dl_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[1] = self.meters_to_pixels(dl_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[0] = self.meters_to_pixels(dr_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[1] = self.meters_to_pixels(dr_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+            theta = math.pi
+
+            transition_matrix = np.array([[math.cos(theta), - math.sin(theta), self.center_x],
+                                        [math.sin(theta), math.cos(theta), self.center_y],
+                                        [0,0,1]])
+            
+            transition_matrix2 = np.array([[1, 0, self.center_x],
+                                        [0, 1, self.center_y],
+                                        [0,0,1]])
+
+
+            position = np.array([[posx],[posy],[1]])
+            position = np.dot(transition_matrix,position)
+            # position = np.dot(transition_matrix2, position)
+            posx = position[0][0]
+            posy = position[1][0]
+
+
+            polygon_pos = [
+                        dl_pos,                        
+                        ul_pos,
+                        ur_pos,
+                        dr_pos,
+                    ]
+            
+            pygame.draw.circle(self.screen, (255,255,255), (posx, posy), 20, 0)
+            
+
+
+    def meters_to_pixels(self,meters, lat, zoom, map_size, window_size):
+
+        # 지구의 둘레 (Equatorial Circumference) = 40,075km
+        EARTH_RADIUS = 6378137  # meters
+
+        # 위도를 라디안으로 변환
+        lat_rad = math.radians(lat)
+
+        # 지도 상에서 한 픽셀당 미터를 계산 (줌 레벨과 위도에 따라 다름)
+        meters_per_pixel = (math.cos(lat_rad) * 2 * math.pi * EARTH_RADIUS) / (2 ** zoom * 256)
+
+        # 주어진 미터를 원본 지도 상의 픽셀로 변환
+        pixels = meters / meters_per_pixel
+
+        # 창 크기 대비 지도 크기에 따른 비율로 스케일링
+        scale_x = window_size[0] / map_size[0]
+        scale_y = window_size[1] / map_size[1]
+
+        # 창에서의 픽셀 크기로 변환
+        pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
+
+        return pixels_on_window
 class MultipleRadarPositionView:
     def __init__(self, model, screen):
         self.model = model

@@ -12,6 +12,8 @@ def load_config():
 
 def run_pygame(config):
     model = MainModel(config['verona'])
+
+    kcity_fusion_objs = model.fusion()
     pygame.init()
     screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH), pygame.RESIZABLE)
     pygame.display.set_caption('K-City develop tool')
@@ -36,7 +38,10 @@ def run_pygame(config):
             viewer.before_scan = viewer.current_scan
             model.load_data(viewer.current_scan)
         viewer.draw()
-        # pygame.display.flip() # 화면 업데이트
+
+        if viewer.current_scan < 200:
+            viewer.draw_fusion_obj(kcity_fusion_objs[viewer.current_scan])
+        # pygame.display.flip() # 화면 업데이트                                                
         pygame.display.update()
 
         clock.tick(config['fps']) 

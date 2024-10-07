@@ -392,7 +392,7 @@ class ScanData(Atm):
         self.azi_theta = self.atm_azi_angle
 
         azi_theta = self.azi_theta * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
-
+        
         theta = math.pi/2 - azi_theta
 
         transition_matrix = np.array([[math.cos(theta), - math.sin(theta), self.radar_diff_x],

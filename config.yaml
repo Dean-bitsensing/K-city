@@ -43,6 +43,7 @@ verona:
     - 45.4310364
     - 10.988078
     data_path: 'C:\\kcity_loggingdata\\data'  # Escaped backslashes
+    h5_data_path: 'C:\\kcity_loggingdata\\datas'  # Escaped backslashes
     intersection_num: 2
     map_zoom: 18
     node:
