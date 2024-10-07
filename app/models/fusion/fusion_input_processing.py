@@ -19,7 +19,7 @@ class Radar:
         """
         self.position = gps_to_utm(*gps_position)  # GPS 좌표를 UTM 좌표로 변환
         self.orientation_rad = np.deg2rad(radar_orientation_deg + 90)  # 각도를 라디안으로 변환
-        self.orientation_deg = radar_orientation_deg  # 각도를 그대로 저장
+        self.orientation_deg = radar_orientation_deg + 90  # 각도를 그대로 저장
 
     def transform_to_world_coordinates(self, local_objects, landmark_position):
         """

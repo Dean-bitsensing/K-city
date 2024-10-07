@@ -261,8 +261,7 @@ class KCityFusionObjView:
             dl_pos = [int(posx + length/2), int(posy - width/2)]
             dr_pos = [int(posx + length/2), int(posy + width/2)]
 
-            posx = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            posy = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            
 
             ul_pos[0] = self.meters_to_pixels(ul_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
             ul_pos[1] = self.meters_to_pixels(ul_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
@@ -272,6 +271,10 @@ class KCityFusionObjView:
             dl_pos[1] = self.meters_to_pixels(dl_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
             dr_pos[0] = self.meters_to_pixels(dr_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
             dr_pos[1] = self.meters_to_pixels(dr_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+
+            posx = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            posy = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
             theta = math.pi
 
@@ -289,7 +292,38 @@ class KCityFusionObjView:
             # position = np.dot(transition_matrix2, position)
             posx = position[0][0]
             posy = position[1][0]
+            heading_angle_deg = kobj.heading_angle_deg
+            heading_angle_rad = -heading_angle_deg * math.pi/180
+            heading_transition_matrix = np.array([[math.cos(heading_angle_rad), - math.sin(heading_angle_rad), 0],
+                                      [math.sin(heading_angle_rad), math.cos(heading_angle_rad), 0],
+                                      [0,0,1]])
+            
+            def tf(pos, transition_matrix, transition_matrix2, heading_matrix, posx, posy):
+            
+                position = np.array([[pos[0]],[pos[1]],[1]])
+                
+                position = np.dot(transition_matrix,position)
+                
+                # position = np.dot(transition_matrix2, position)
+                
+                pos[0] = position[0][0]
+                pos[1] = position[1][0]
 
+                posx_c = pos[0] - posx
+                posy_c = pos[1] - posy
+
+                position = np.array([[posx_c],[posy_c],[1]])
+                position = np.dot(heading_matrix,position)
+
+                pos[0] = position[0][0] + posx
+                pos[1] = position[1][0] + posy
+
+                return pos
+        
+            ul_pos = tf(ul_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
+            ur_pos = tf(ur_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
+            dl_pos = tf(dl_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
+            dr_pos = tf(dr_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
 
             polygon_pos = [
                         dl_pos,                        
@@ -298,11 +332,12 @@ class KCityFusionObjView:
                         dr_pos,
                     ]
             
-            pygame.draw.circle(self.screen, (255,255,255), (posx, posy), 20, 0)
+            pygame.draw.circle(self.screen, (255,255,255), (posx, posy), 2, 0)
+            pygame.draw.polygon(self.screen, white, polygon_pos, 2)
             
 
 
-    def meters_to_pixels(self,meters, lat, zoom, map_size, window_size):
+    def meters_to_pixels(self, meters, lat, zoom, map_size, window_size):
 
         # 지구의 둘레 (Equatorial Circumference) = 40,075km
         EARTH_RADIUS = 6378137  # meters
@@ -324,6 +359,7 @@ class KCityFusionObjView:
         pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
 
         return pixels_on_window
+    
 class MultipleRadarPositionView:
     def __init__(self, model, screen):
         self.model = model

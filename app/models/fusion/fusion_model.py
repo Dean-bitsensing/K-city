@@ -3,6 +3,7 @@ import h5py
 import math
 import numpy as np
 from copy import deepcopy
+from tqdm import tqdm
 from dataclasses import asdict
 from .fusion_data_classes import Obj, TObj
 from .fusion_input_processing import *
@@ -35,7 +36,7 @@ class Fusion:
     def prediction(self):
     
         for tobj in self.scan_wise_fusion_output:
-            X = np.array([tobj.posx], [tobj.posy], [tobj.velx], [tobj.vely])
+            X = np.array([[tobj.posx], [tobj.posy], [tobj.velx], [tobj.vely]])
             P=tobj.covariance
 
             X_pred=np.dot(self.system_matrix,X)
@@ -48,8 +49,21 @@ class Fusion:
             tobj.covariance = P_pred
 
     
-    def association(self):
-        pass
+    def association(self, scan_num):
+        
+        for tobj in self.scan_wise_fusion_output:
+            new_associated_info ={}
+            for info in tobj.associated_info.keys():
+                associated_info_idx = tobj.associated_info[info]
+                # scan_obj = self.fusion_inputs[info][scan_num][associated_info_idx] # -> find by ID? 
+                scan_obj = self.find_obj_with_id(self.fusion_inputs[info][scan_num], associated_info_idx)
+                if not scan_obj:
+                    continue
+                if self.possible_to_associate(tobj, scan_obj):
+                    new_associated_info[info] = associated_info_idx
+                    scan_obj.associated_fusion_obj_idx = tobj.id
+            tobj.associated_info = new_associated_info
+
 
     def update(self, scan_num):
 
@@ -60,6 +74,8 @@ class Fusion:
                 scan_obj = self.find_obj_with_id(self.fusion_inputs[info][scan_num], associated_info_idx)
                 X_pred = np.array([[tobj.posx], [tobj.posy], [tobj.velx], [tobj.vely]])
                 P_pred = tobj.covariance
+                if not scan_obj:
+                    print(scan_num)
 
                 X_meas = np.array([[scan_obj.posx], [scan_obj.posy], [scan_obj.velx], [scan_obj.vely]])
 
@@ -93,11 +109,18 @@ class Fusion:
     
 
     ### for association and update
-    def find_obj_with_id(objs, id):
+    def find_obj_with_id(self, objs, id):
         for obj in objs:
             if obj.id ==id:
                 return obj
 
+    def possible_to_associate(self, tobj1, tobj2):
+
+        postion_in = abs(tobj1.posx - tobj2.posx) < 10 and abs(tobj1.posy - tobj2.posy) < 10
+        velocity_in = abs(tobj1.velx - tobj2.velx) < 10 and abs(tobj1.vely - tobj2.vely) < 10
+
+        return postion_in and velocity_in
+    
     ### for management ###
 
     def delete_obj(self):
@@ -122,8 +145,10 @@ class Fusion:
                     new_tobj.info = 'esterno'
                     new_tobj.associated_info[new_obj.info] = new_obj.id
                     if empty_index == -1:
+                        new_tobj.id = len(self.scan_wise_fusion_output)
                         self.scan_wise_fusion_output.append(new_tobj)
                     else:
+                        new_tobj.id =  empty_index
                         self.scan_wise_fusion_output[empty_index] = new_tobj
 
     def merge_fusion_obj(self):
@@ -152,12 +177,16 @@ class Fusion:
 
         return postion_in and velocity_in and possible_to_associated
     
+
+    
     def merge(self,merge_infos):
         #TODO has to be changed
         for merge_info in merge_infos:
             empty_obj = TObj()
             for merge_obj_idx in merge_info[1:]:
+                self.scan_wise_fusion_output[merge_info[0]].associated_info.update(self.scan_wise_fusion_output[merge_obj_idx].associated_info)
                 self.scan_wise_fusion_output[merge_obj_idx] = empty_obj
+                
              
                 
 
@@ -179,7 +208,7 @@ def fusion_main(folder_path):
         esterno.load_data(esterno_fusion_inputs)
         # interno.load_data(interno_fusion_inputs)
 
-        for scan_num in range(200): #h5 길이에 따라 가변적으로 
+        for scan_num in tqdm(range(200)): #h5 길이에 따라 가변적으로 
             esterno.fusion(scan_num)
 
 
