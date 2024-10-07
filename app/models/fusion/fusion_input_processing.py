@@ -18,7 +18,7 @@ class Radar:
         :param radar_orientation_deg: 레이더의 방향 (각도, degrees)
         """
         self.position = gps_to_utm(*gps_position)  # GPS 좌표를 UTM 좌표로 변환
-        self.orientation_rad = np.deg2rad(radar_orientation_deg)  # 각도를 라디안으로 변환
+        self.orientation_rad = np.deg2rad(radar_orientation_deg + 90)  # 각도를 라디안으로 변환
         self.orientation_deg = radar_orientation_deg  # 각도를 그대로 저장
 
     def transform_to_world_coordinates(self, local_objects, landmark_position):
@@ -105,10 +105,13 @@ def input_processing(intersection_folder_path : str):
                     new_obj.fusion_age  = fobj[17]
 
                     # 좌표 변환
-                    posx = -posx
-                    velx = -velx
+                    # posx = -posx
+                    # velx = -velx
                     world_pos = radar.transform_to_world_coordinates([posx, posy], landmark_position)
                     world_vel = radar.transform_to_world_coordinates([velx, vely], landmark_position)
+
+
+
                     posx, posy = world_pos
                     velx, vely = world_vel
 

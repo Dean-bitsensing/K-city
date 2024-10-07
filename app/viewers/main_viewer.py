@@ -252,8 +252,8 @@ class KCityFusionObjView:
     def draw_kobj(self, current_scan_kcity_fusion_obj):
         for kobj in current_scan_kcity_fusion_obj:
             white = (255,255,255)
-            posx =  kobj.posx 
-            posy = - kobj.posy 
+            posx =  -kobj.posx 
+            posy = kobj.posy 
             width = kobj.width 
             length = kobj.length 
             ul_pos = [int(posx - length/2), int(posy - width/2)]
