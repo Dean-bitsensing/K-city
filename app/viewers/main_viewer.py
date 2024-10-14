@@ -258,38 +258,38 @@ class KCityFusionObjView:
             if kobj.update_state < 2:
                 continue
             white = (255,255,255)
-            posx =  -kobj.posx 
-            posy = kobj.posy 
+            posx =  kobj.posx 
+            posy =  - kobj.posy 
             width = kobj.width 
             length = kobj.length 
             heading_angle = kobj.heading_angle_deg
-            ul_pos = [int(posx - length/2), int(posy - width/2)]
-            ur_pos = [int(posx - length/2), int(posy + width/2)]
-            dl_pos = [int(posx + length/2), int(posy - width/2)]
-            dr_pos = [int(posx + length/2), int(posy + width/2)]
+            # ul_pos = [int(posx - length/2), int(posy - width/2)]
+            # ur_pos = [int(posx - length/2), int(posy + width/2)]
+            # dl_pos = [int(posx + length/2), int(posy - width/2)]
+            # dr_pos = [int(posx + length/2), int(posy + width/2)]
 
             
 
-            ul_pos[0] = self.center_x - self.meters_to_pixels(ul_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[1] = self.center_y - self.meters_to_pixels(ul_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[0] = self.center_x - self.meters_to_pixels(ur_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[1] = self.center_y - self.meters_to_pixels(ur_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[0] = self.center_x - self.meters_to_pixels(dl_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[1] = self.center_y - self.meters_to_pixels(dl_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[0] = self.center_x - self.meters_to_pixels(dr_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[1] = self.center_y - self.meters_to_pixels(dr_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # ul_pos[0] = self.center_x - self.meters_to_pixels(ul_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # ul_pos[1] = self.center_y - self.meters_to_pixels(ul_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # ur_pos[0] = self.center_x - self.meters_to_pixels(ur_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # ur_pos[1] = self.center_y - self.meters_to_pixels(ur_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # dl_pos[0] = self.center_x - self.meters_to_pixels(dl_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # dl_pos[1] = self.center_y - self.meters_to_pixels(dl_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # dr_pos[0] = self.center_x - self.meters_to_pixels(dr_pos[0], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            # dr_pos[1] = self.center_y - self.meters_to_pixels(dr_pos[1], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
     
             # ul_pos = self.rotate_point(*ul_pos,heading_angle, posx, posy)
             # ur_pos = self.rotate_point(*ur_pos,heading_angle, posx, posy)
             # dl_pos = self.rotate_point(*dl_pos,heading_angle, posx, posy)
             # dr_pos = self.rotate_point(*dr_pos,heading_angle, posx, posy)
 
-            polygon_pos = [
-                        dl_pos,                        
-                        ul_pos,
-                        ur_pos,
-                        dr_pos,
-                    ]
+            # polygon_pos = [
+            #             dl_pos,                        
+            #             ul_pos,
+            #             ur_pos,
+            #             dr_pos,
+            #         ]
             
             id_text = str(kobj.id)  # ID를 문자열로 변환
             if len(kobj.associated_info) >= 3:
@@ -298,7 +298,14 @@ class KCityFusionObjView:
                 color = (255,0,0)
             else:
                 color = (255,255,255)
-            pos = (ul_pos, ur_pos)
+
+            posx_pixel = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+            posy_pixel = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+            posx_pixel += self.center_x
+            posy_pixel += self.center_y
+
+            pos = (posx_pixel, posy_pixel)
 
             # 텍스트를 렌더링 (안티앨리어싱: True, 색상: 흰색)
             text_surface = font.render(id_text, True, (0, 100, 0))
@@ -306,8 +313,8 @@ class KCityFusionObjView:
             # 텍스트를 pos 위치에 그리기
             self.screen.blit(text_surface, pos)
 
-            pygame.draw.circle(self.screen, (255,255,255), (posx, posy), 2, 0)
-            pygame.draw.polygon(self.screen, color, polygon_pos, 2)
+            pygame.draw.circle(self.screen, (255,255,255), (posx_pixel, posy_pixel), 10, 0)
+            # pygame.draw.polygon(self.screen, color, polygon_pos, 2)
             
 
     def rotate_point(self, x, y, angle, origin_x, origin_y):

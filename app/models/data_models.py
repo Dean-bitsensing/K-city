@@ -533,6 +533,7 @@ class ScanData(Atm):
             pixel_y_on_window = int(pixel_y * scale_y)
 
             return pixel_x_on_window, pixel_y_on_window
+        
         def calculate_xy_distance(coord1, coord2):
             # 지구 반지름 (미터 단위)
             R = 6378137  
@@ -554,8 +555,8 @@ class ScanData(Atm):
             return x_distance, y_distance
 
         # 두 좌표 정의 (위도, 경도)
-        radar_gps = (self.atm_lat, self.atm_long)  # 샌프란시스코 좌표
-        landmark_gps = (self.landmark[0], self.landmark[1])  # 로스앤젤레스 좌표
+        radar_gps = (self.atm_lat, self.atm_long)  
+        landmark_gps = (self.landmark[0], self.landmark[1]) 
 
         # x, y 거리 계산
         x_distance, y_distance = calculate_xy_distance(landmark_gps, radar_gps)

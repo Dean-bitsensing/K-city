@@ -2,7 +2,7 @@ import os
 import h5py
 import numpy as np
 import utm  # UTM 좌표계로 변환
-from geopy.distance import geodesic  # GPS 거리 계산
+import math
 from .fusion_data_classes import *
 from tqdm import tqdm
 # GPS 좌표 (위도, 경도)를 UTM 좌표로 변환하는 함수
@@ -13,69 +13,30 @@ def gps_to_utm(latitude, longitude):
 # Radar 클래스 정의
 class Radar:
     def __init__(self, gps_position, radar_orientation_deg):
-        """
-        :param gps_position: 레이더의 GPS 좌표 (위도, 경도)
-        :param radar_orientation_deg: 레이더의 방향 (각도, degrees)
-        """
-        self.position = gps_to_utm(*gps_position)  # GPS 좌표를 UTM 좌표로 변환
-        self.orientation_rad = np.deg2rad(radar_orientation_deg + 90)  # 각도를 라디안으로 변환
-        self.orientation_deg = radar_orientation_deg + 90  # 각도를 그대로 저장
 
-    def transform_to_world_coordinates(self, local_objects, landmark_position):
-        """
-        로컬 좌표에 있는 객체를 월드 좌표계(landmark 기준)로 변환
-        :param local_objects: 레이더 센서에서 수집한 객체들의 좌표 [[x1, y1], [x2, y2], ...]
-        :param landmark_position: 랜드마크의 GPS 좌표 (위도, 경도)
-        :return: 월드 좌표계로 변환된 객체 좌표 (landmark 기준)
-        """
-        # 로컬 좌표를 넘파이 배열로 변환
-        local_objects = np.array(local_objects)
+        self.position = gps_position 
+        self.rad = np.deg2rad(radar_orientation_deg) 
 
-        # 회전 변환 행렬 (Z축 평면에서의 2D 회전)
-        rotation_matrix = np.array([
-            [np.cos(self.orientation_rad), -np.sin(self.orientation_rad)],
-            [np.sin(self.orientation_rad), np.cos(self.orientation_rad)]
-        ])
+def calculate_xy_distance(coord1, coord2):
+        # 지구 반지름 (미터 단위)
+        R = 6378137  
 
-        # 회전 변환 후 평행 이동
-        world_objects = np.dot(local_objects, rotation_matrix.T) + self.position
+        # 위도와 경도를 라디안으로 변환
+        lat1, lon1 = math.radians(coord1[0]), math.radians(coord1[1])
+        lat2, lon2 = math.radians(coord2[0]), math.radians(coord2[1])
 
-        # 랜드마크 기준으로 변환 (landmark를 원점으로 설정)
-        landmark_utm = gps_to_utm(*landmark_position)
-        world_objects_landmark_relative = world_objects - landmark_utm
+        # 위도와 경도의 차이
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
 
-        return world_objects_landmark_relative
+        # y(남북 방향 거리) 계산
+        y_distance = R * dlat
 
-    # Radar 클래스에 추가할 메서드
-    def transform_velocity_to_world(self, local_velocity):
-        """
-        로컬 좌표계에서의 속도 벡터를 월드 좌표계로 변환
-        :param local_velocity: 로컬 좌표계에서의 속도 벡터 [vx, vy]
-        :return: 월드 좌표계에서의 속도 벡터 [vx_world, vy_world]
-        """
-        # 로컬 속도 벡터를 넘파이 배열로 변환
-        local_velocity = np.array(local_velocity)
+        # x(동서 방향 거리) 계산 (위도에 따른 조정 포함)
+        x_distance = R * dlon * math.cos((lat1 + lat2) / 2)
 
-        # 회전 변환 행렬 (Z축 평면에서의 2D 회전)
-        rotation_matrix = np.array([
-            [np.cos(self.orientation_rad), -np.sin(self.orientation_rad)],
-            [np.sin(self.orientation_rad), np.cos(self.orientation_rad)]
-        ])
+        return x_distance, y_distance
 
-        # 회전 변환을 적용하여 월드 좌표계에서의 속도 벡터로 변환
-        world_velocity = np.dot(local_velocity, rotation_matrix.T)
-
-        return world_velocity
-
-
-    def transform_heading_to_world(self, heading_angle_local):
-        """
-        차량의 로컬 heading angle을 월드 좌표계로 변환
-        :param heading_angle_local: 로컬 좌표계에서의 차량 heading angle (degrees)
-        :return: 월드 좌표계에서의 차량 heading angle (degrees)
-        """
-        heading_world = (heading_angle_local + self.orientation_deg) % 360
-        return heading_world
 
 def load_config(config):
     folder_path = config['info']['h5_data_path']
@@ -115,6 +76,11 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
         ip = file_path.split('_')[-1][:-3]
         fusion_inputs[ip] = []
         radar = radars[ip]
+        radar_gps = radar.position
+        landmark_gps = landmark_position
+
+        # x, y 거리 계산
+        x_distance, y_distance = calculate_xy_distance(landmark_gps, radar_gps)
         # h5 파일 열기
         with h5py.File(file_path, 'r') as h5_file_data:
             data_dict = h5_file_data
@@ -143,18 +109,30 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
                     new_obj.fusion_age  = fobj[17]
 
                     # 좌표 변환
-                    # posx = -posx
-                    # velx = -velx
-                    world_pos = radar.transform_to_world_coordinates([posx, posy], landmark_position)
-                    world_vel = radar.transform_velocity_to_world([velx, vely])
+                    x_distance, y_distance = calculate_xy_distance(landmark_gps, radar_gps)
+                    radar_diff_x_meter = x_distance
+                    radar_diff_y_meter = y_distance
 
+                    azi_theta = radar.rad * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
 
+                    theta_meter = azi_theta + math.pi/2
+                    
+                    transition_matrix_meter = np.array([[math.cos(theta_meter), - math.sin(theta_meter), radar_diff_x_meter],
+                                                [math.sin(theta_meter), math.cos(theta_meter), radar_diff_y_meter],
+                                                [0,0,1]])
+                    
+                    position = np.array([[posx],[posy],[1]]) # posx, posy -> meter
+                    position = np.dot(transition_matrix_meter,position)
 
-                    posx, posy = world_pos
-                    velx, vely = world_vel
+                    posx = position[0][0]
+                    posy = position[1][0]
 
-                    # Heading angle을 월드 좌표계로 변환
-                    heading_angle_world = radar.transform_heading_to_world(heading_angle_deg)
+                    velocity = np.array([[velx],[vely],[1]])
+                    velocity = np.dot(transition_matrix_meter,velocity)
+
+                    velx = velocity[0][0]
+                    vely = velocity[1][0]
+
 
                     # 업데이트된 좌표와 속도 및 heading angle 적용
                     new_obj.posx   = posx
@@ -163,7 +141,7 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
                     new_obj.vely   = vely
                     new_obj.width  = width
                     new_obj.length = length
-                    new_obj.heading_angle_deg = heading_angle_world
+                    new_obj.heading_angle_deg += radar.rad
                     scan_wise_fusion_inputs.append(new_obj)
                 fusion_inputs[ip].append(scan_wise_fusion_inputs)
     return fusion_inputs

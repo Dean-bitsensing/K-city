@@ -59,7 +59,7 @@ def run_pygame(config):
 
     print(model.max_scan)
 
-    # kcity_fusion_objs = model.fusion()
+    kcity_fusion_objs = model.fusion()
 
     while viewer.running:
         screen.fill((0, 0, 0))
@@ -67,7 +67,7 @@ def run_pygame(config):
             viewer.before_scan = viewer.current_scan
             model.load_data(viewer.current_scan)
         viewer.draw()
-        # viewer.draw_fusion_obj(kcity_fusion_objs[viewer.current_scan])
+        viewer.draw_fusion_obj(kcity_fusion_objs[viewer.current_scan])
         # pygame.display.flip() # 화면 업데이트                                                
         pygame.display.update()
         clock.tick(config['fps']) 
@@ -94,6 +94,6 @@ def main(config):
     pygame_thread.start()
 
 if __name__ == "__main__":
-    # get_scan_num()
+    get_scan_num()
     config = load_config()
     main(config)
