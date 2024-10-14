@@ -275,25 +275,20 @@ class ScanData(Atm):
 
         azi_theta = self.azi_theta * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
 
-        theta = math.pi/2 - azi_theta
+        theta_meter = azi_theta + math.pi/2
+        
+        transition_matrix_meter = np.array([[math.cos(theta_meter), - math.sin(theta_meter), self.radar_diff_x_meter],
+                                      [math.sin(theta_meter), math.cos(theta_meter), self.radar_diff_y_meter],
+                                      [0,0,1]])
+        
 
-        transition_matrix = np.array([[math.cos(theta), - math.sin(theta), self.radar_diff_x],
-                                      [math.sin(theta), math.cos(theta), self.radar_diff_y],
-                                      [0,0,1]])
         
-        transition_matrix2 = np.array([[1, 0, self.center_x],
-                                      [0, 1, self.center_y],
-                                      [0,0,1]])
-        
-        
-        
-        def tf(pos, transition_matrix, transition_matrix2, heading_matrix, posx, posy):
+        def tf(pos, transition_matrix, heading_matrix, posx, posy):
             
             position = np.array([[pos[0]],[pos[1]],[1]])
             
             position = np.dot(transition_matrix,position)
             
-            position = np.dot(transition_matrix2, position)
             
             pos[0] = position[0][0]
             pos[1] = position[1][0]
@@ -305,7 +300,7 @@ class ScanData(Atm):
             position = np.dot(heading_matrix,position)
 
             pos[0] = position[0][0] + posx
-            pos[1] = position[1][0] + posy
+            pos[1] = -(position[1][0] + posy)
 
             return pos
         
@@ -330,53 +325,66 @@ class ScanData(Atm):
             new_fobj.heading_angle_deg = heading_angle_deg
 
 
-            posx = -posx
-            velx = -velx
+            position = np.array([[posx],[posy],[1]]) # posx, posy -> meter
+            position = np.dot(transition_matrix_meter,position)
+
+            posx_meter = position[0][0]
+            posy_meter = position[1][0]
+
+            posy_meter_inv = - position[1][0]
+            posx_pixel = meters_to_pixels(posx_meter, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            posy_pixel = meters_to_pixels(posy_meter_inv, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+
+            posx_pixel += self.center_x
+            posy_pixel += self.center_y
+
+            # posx = -posx
+            # velx = -velx
             
-            heading_angle_rad = -heading_angle_deg * math.pi/180
-            ul_pos = [int(posx - length/2), int(posy - width/2)]
-            ur_pos = [int(posx - length/2), int(posy + width/2)]
-            dl_pos = [int(posx + length/2), int(posy - width/2)]
-            dr_pos = [int(posx + length/2), int(posy + width/2)]
+            heading_angle_rad = heading_angle_deg * math.pi/180
+            ul_pos = [int(posx + length/2), int(posy + width/2)]
+            ur_pos = [int(posx + length/2), int(posy - width/2)]
+            dl_pos = [int(posx - length/2), int(posy + width/2)]
+            dr_pos = [int(posx - length/2), int(posy - width/2)]
 
             heading_transition_matrix = np.array([[math.cos(heading_angle_rad), - math.sin(heading_angle_rad), 0],
                                       [math.sin(heading_angle_rad), math.cos(heading_angle_rad), 0],
                                       [0,0,1]])
             
-            # self.landmark[0] : landmark lat, self.landmark[1] : landmark long, self.landmark[2] : map zoom
-            posx = meters_to_pixels(posx, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            posy = meters_to_pixels(posy, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            
-            ul_pos[0] = meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[1] = meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-
-            ur_pos[0] = meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[1] = meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-
-
-            dl_pos[0] = meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[1] = meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-
-            dr_pos[0] = meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[1] = meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-
-            new_fobj.before_posx = posx
+            new_fobj.before_posx = -posx
             new_fobj.before_posy = posy
             
-            position = np.array([[posx],[posy],[1]])
-            position = np.dot(transition_matrix,position)
-            position = np.dot(transition_matrix2, position)
-            posx = position[0][0]
-            posy = position[1][0]
 
-            new_fobj.trns_posx = posx
-            new_fobj.trns_posy = posy
+            new_fobj.trns_posx = posx_pixel
+            new_fobj.trns_posy = posy_pixel
             
-            ul_pos = tf(ul_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
-            ur_pos = tf(ur_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
-            dl_pos = tf(dl_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
-            dr_pos = tf(dr_pos, transition_matrix, transition_matrix2, heading_transition_matrix, posx, posy)
+            ul_pos = tf(ul_pos, transition_matrix_meter, heading_transition_matrix, posx_meter, posy_meter)
+            ur_pos = tf(ur_pos, transition_matrix_meter, heading_transition_matrix, posx_meter, posy_meter)
+            dl_pos = tf(dl_pos, transition_matrix_meter, heading_transition_matrix, posx_meter, posy_meter)
+            dr_pos = tf(dr_pos, transition_matrix_meter, heading_transition_matrix, posx_meter, posy_meter)
 
+            ul_pos[0] = meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[0] += self.center_x
+            ul_pos[1] = meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            ul_pos[1] += self.center_y
+
+            ur_pos[0] = meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[0] += self.center_x
+            ur_pos[1] = meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            ur_pos[1] += self.center_y
+
+            dl_pos[0] = meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[0] += self.center_x
+            dl_pos[1] = meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            dl_pos[1] += self.center_y
+
+            dr_pos[0] = meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[0] += self.center_x
+            dr_pos[1] = meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+            dr_pos[1] += self.center_y
+        
+            
+            
             new_fobj.ul_pos = ul_pos
             new_fobj.ur_pos = ur_pos
             new_fobj.dl_pos = dl_pos
@@ -525,18 +533,49 @@ class ScanData(Atm):
             pixel_y_on_window = int(pixel_y * scale_y)
 
             return pixel_x_on_window, pixel_y_on_window
-        
+        def calculate_xy_distance(coord1, coord2):
+            # 지구 반지름 (미터 단위)
+            R = 6378137  
+
+            # 위도와 경도를 라디안으로 변환
+            lat1, lon1 = math.radians(coord1[0]), math.radians(coord1[1])
+            lat2, lon2 = math.radians(coord2[0]), math.radians(coord2[1])
+
+            # 위도와 경도의 차이
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+
+            # y(남북 방향 거리) 계산
+            y_distance = R * dlat
+
+            # x(동서 방향 거리) 계산 (위도에 따른 조정 포함)
+            x_distance = R * dlon * math.cos((lat1 + lat2) / 2)
+
+            return x_distance, y_distance
+
+        # 두 좌표 정의 (위도, 경도)
+        radar_gps = (self.atm_lat, self.atm_long)  # 샌프란시스코 좌표
+        landmark_gps = (self.landmark[0], self.landmark[1])  # 로스앤젤레스 좌표
+
+        # x, y 거리 계산
+        x_distance, y_distance = calculate_xy_distance(landmark_gps, radar_gps)
+        print(f"Radar IP : {self.atm.ip}")
+        print(f"x 방향 거리 (동서 방향): {x_distance:.2f} meters")
+        print(f"y 방향 거리 (남북 방향): {y_distance:.2f} meters")
 
         self.latitiude = self.atm_lat
         self.longitude = self.atm_long
 
+       
         
         # test
         ##
         radar_x, radar_y = latlng_to_pixel(self.latitiude, self.longitude, self.landmark[0], self.landmark[1], self.landmark[2], (640, 640), (center_x*2, center_y*2))
     
+        self.radar_diff_x_meter = x_distance
+        self.radar_diff_y_meter = y_distance
 
-        self.radar_diff_x = radar_x - center_x
+        self.radar_diff_x = radar_x - center_x # pixel
         self.radar_diff_y = radar_y - center_y 
         self.center_x = center_x
         self.center_y = center_y

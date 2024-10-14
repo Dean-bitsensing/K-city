@@ -10,7 +10,7 @@ class MainViewer:
         self.running = True
         self.paused = True
         self.delete_mode = False
-        self.fusion_only_mode = True
+        self.fusion_only_mode = False
         self.current_scan = 0
         self.before_scan = 0
         self.class_init()
