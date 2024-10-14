@@ -4,7 +4,7 @@ import numpy as np
 import utm  # UTM 좌표계로 변환
 from geopy.distance import geodesic  # GPS 거리 계산
 from .fusion_data_classes import *
-
+from tqdm import tqdm
 # GPS 좌표 (위도, 경도)를 UTM 좌표로 변환하는 함수
 def gps_to_utm(latitude, longitude):
     utm_coords = utm.from_latlon(latitude, longitude)
@@ -46,6 +46,28 @@ class Radar:
 
         return world_objects_landmark_relative
 
+    # Radar 클래스에 추가할 메서드
+    def transform_velocity_to_world(self, local_velocity):
+        """
+        로컬 좌표계에서의 속도 벡터를 월드 좌표계로 변환
+        :param local_velocity: 로컬 좌표계에서의 속도 벡터 [vx, vy]
+        :return: 월드 좌표계에서의 속도 벡터 [vx_world, vy_world]
+        """
+        # 로컬 속도 벡터를 넘파이 배열로 변환
+        local_velocity = np.array(local_velocity)
+
+        # 회전 변환 행렬 (Z축 평면에서의 2D 회전)
+        rotation_matrix = np.array([
+            [np.cos(self.orientation_rad), -np.sin(self.orientation_rad)],
+            [np.sin(self.orientation_rad), np.cos(self.orientation_rad)]
+        ])
+
+        # 회전 변환을 적용하여 월드 좌표계에서의 속도 벡터로 변환
+        world_velocity = np.dot(local_velocity, rotation_matrix.T)
+
+        return world_velocity
+
+
     def transform_heading_to_world(self, heading_angle_local):
         """
         차량의 로컬 heading angle을 월드 좌표계로 변환
@@ -55,22 +77,38 @@ class Radar:
         heading_world = (heading_angle_local + self.orientation_deg) % 360
         return heading_world
 
+def load_config(config):
+    folder_path = config['info']['h5_data_path']
 
-radars = { 
-    '1.0.0.20' : Radar([45.43072430000016, 10.98769880000001], 9),
-    '1.0.0.21' : Radar([45.430227500000164, 10.987823700000048], 18),
-    '1.0.0.22' : Radar([45.430359, 10.9882485], 67),
-    '1.0.0.23' : Radar([45.430319, 10.9883385], 0),
-    '1.0.0.24' : Radar([45.43077730000001, 10.987771800000045], 246.71),
-    '1.0.0.25' : Radar([45.4301545, 10.9879317], -27.1)
-}
+    # esterno_radars 딕셔너리를 생성
+    esterno_radars = {
+        '1.0.0.20': Radar(config['esterno']['radar_gps_1.0.0.20'], config['esterno']['radar_azi_angle_1.0.0.20']),
+        '1.0.0.21': Radar(config['esterno']['radar_gps_1.0.0.21'], config['esterno']['radar_azi_angle_1.0.0.21']),
+        '1.0.0.22': Radar(config['esterno']['radar_gps_1.0.0.22'], config['esterno']['radar_azi_angle_1.0.0.22']),
+        '1.0.0.23': Radar(config['esterno']['radar_gps_1.0.0.23'], config['esterno']['radar_azi_angle_1.0.0.23']),
+        '1.0.0.24': Radar(config['esterno']['radar_gps_1.0.0.24'], config['esterno']['radar_azi_angle_1.0.0.24']),
+        '1.0.0.25': Radar(config['esterno']['radar_gps_1.0.0.25'], config['esterno']['radar_azi_angle_1.0.0.25']),
+    }
 
-landmark_position = [45.4310364, 10.988078] 
+    # interno_radars 딕셔너리를 생성
+    interno_radars = {
+        '1.0.0.10': Radar(config['interno']['radar_gps_1.0.0.10'], config['interno']['radar_azi_angle_1.0.0.10']),
+        '1.0.0.11': Radar(config['interno']['radar_gps_1.0.0.11'], config['interno']['radar_azi_angle_1.0.0.11']),
+        '1.0.0.12': Radar(config['interno']['radar_gps_1.0.0.12'], config['interno']['radar_azi_angle_1.0.0.12']),
+        '1.0.0.13': Radar(config['interno']['radar_gps_1.0.0.13'], config['interno']['radar_azi_angle_1.0.0.13']),
+    }
+
+    # landmark_position 리스트를 생성
+    landmark_position = config['info']['center_gps']
+
+    max_scan = config['info']['MAX_SCAN']
+
+    return folder_path, esterno_radars, interno_radars, landmark_position, max_scan
 
 
-
-def input_processing(intersection_folder_path : str):
+def input_processing(intersection_folder_path : str, radars : dict, landmark_position : list, max_scan_num : int):
     fusion_inputs = {}
+
     h5_files = [f'{intersection_folder_path}/'+file for file in os.listdir(intersection_folder_path) if file.endswith('.h5')]
     for h5_file in h5_files:
         file_path = os.path.join(intersection_folder_path, h5_file)
@@ -80,7 +118,7 @@ def input_processing(intersection_folder_path : str):
         # h5 파일 열기
         with h5py.File(file_path, 'r') as h5_file_data:
             data_dict = h5_file_data
-            for scan_num in range(200):  # 테스트를 위해 10번만 처리
+            for scan_num in tqdm(range(max_scan_num)):  # 테스트를 위해 10번만 처리
                 scan_wise_fusion_inputs = []
                 for fobj in data_dict['SCAN_{:05d}'.format(scan_num)]['Object'][:]:
                     new_obj = Obj()
@@ -108,7 +146,7 @@ def input_processing(intersection_folder_path : str):
                     # posx = -posx
                     # velx = -velx
                     world_pos = radar.transform_to_world_coordinates([posx, posy], landmark_position)
-                    world_vel = radar.transform_to_world_coordinates([velx, vely], landmark_position)
+                    world_vel = radar.transform_velocity_to_world([velx, vely])
 
 
 

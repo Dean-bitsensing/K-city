@@ -50,19 +50,7 @@ class MainModel:
     def set_min_max_scan(self): # 여러개의 logging file중 가장 작은 값으로 설정해야함.
         
         self.min_scan = -1
-        self.max_scan = 99999999999
-
-        for file in self.logging_data:
-            file = h5py.File(file, 'r')
-            max = int(file['DATA_INFO']['finScan'][()].item())
-            min = int(file['DATA_INFO']['initScan'][()].item())
-
-            if min > self.min_scan:
-                self.min_scan = min
-            
-            if max < self.max_scan:
-                self.max_scan = max
-            file.close()
+        self.max_scan = self.config['info']['MAX_SCAN']
     
     def load_data(self, current_scan):
         for intersection in self.intersections:
@@ -70,7 +58,7 @@ class MainModel:
                 atm.get_scan_data(current_scan, self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
 
     def fusion(self):
-        return fusion_main(self.config['info']['h5_data_path'])
+        return fusion_main(self.config)
 
     def init_model_class(self):
         self.window_model = WindowModel()

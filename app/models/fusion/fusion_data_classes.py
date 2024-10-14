@@ -6,7 +6,7 @@ class Obj:
 ### Additional attributes which is not included in input and output
 
     info : str = '' # can be atm's ip or intersection name 
-    associated_fusion_obj_idx : int = -1 # attributes for fusion association and management
+    associated: bool = False # attributes for fusion association and management
 
 ### From below oriented from input
 

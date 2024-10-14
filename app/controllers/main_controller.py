@@ -138,6 +138,12 @@ class MainController:
                         print(f'atm_lat       : {atm.atm_lat}')
                         print(f'atm_long      : {atm.atm_long}')
                         print(f'atm_azi_angle : {atm.atm_azi_angle}')
+                        
+        elif event.key == pygame.K_f:
+            self. viewer.fusion_only_mode = not self. viewer.fusion_only_mode
+        
+        elif event.key == pygame.K_d:
+            self.viewer.delete_mode = not self.viewer.delete_mode
 
         elif event.key == pygame.K_F2:
             self.model.view_mode[0] = 1
