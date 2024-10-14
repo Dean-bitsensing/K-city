@@ -8,6 +8,8 @@ from dataclasses import asdict
 from .fusion_data_classes import Obj, TObj
 from .fusion_input_processing import *
 
+MERGE_DISTANCE_GATE = 10
+
 class Fusion:
     def __init__(self):
         self.scan_wise_fusion_output = []  # can be iobj and kobj (flow: aobj -> tobj -> iobj -> tobj -> kobj)
@@ -106,9 +108,12 @@ class Fusion:
                 tobj.covariance = P_est
 
     def management(self, scan_num):
+        self.check_to_delete()
         self.delete_obj()
         self.generate_new_fusion_obj(scan_num)
         self.merge_fusion_obj()
+        self.update_age()
+        self.update_state_by_age()
 
     def fusion(self, scan_num):
         self.prediction()
@@ -130,13 +135,18 @@ class Fusion:
                 return obj
 
     def possible_to_associate(self, tobj1, tobj2):
-        position_in = abs(tobj1.posx - tobj2.posx) < 20 and abs(tobj1.posy - tobj2.posy) < 20
-        velocity_in = abs(tobj1.velx - tobj2.velx) < 20 and abs(tobj1.vely - tobj2.vely) < 20
+        position_in = abs(tobj1.posx - tobj2.posx) < 10 and abs(tobj1.posy - tobj2.posy) < 10
+        velocity_in = abs(tobj1.velx - tobj2.velx) < 5 and abs(tobj1.vely - tobj2.vely) < 5
         return position_in and velocity_in
+
+    def check_to_delete(self):
+        for tobj in self.scan_wise_fusion_output:
+            if not tobj.associated_info:
+                tobj.deletion_age += 1
 
     def delete_obj(self):
         # associated_info가 없으면 빈 TObj() 객체를 넣고, 그렇지 않으면 기존 tobj 유지
-        self.scan_wise_fusion_output = [tobj if tobj.associated_info else TObj() for tobj in self.scan_wise_fusion_output]
+        self.scan_wise_fusion_output = [tobj if tobj.deletion_age <= 3 else TObj() for tobj in self.scan_wise_fusion_output]
 
 
     def find_empty_space(self):
@@ -155,6 +165,9 @@ class Fusion:
                     empty_index = self.find_empty_space()
                     new_tobj = TObj(**asdict(new_obj))
                     new_tobj.info = self.mode
+                    new_tobj.alive_age = 0
+                    new_tobj.update_state = 1
+                    new_tobj.fusion_type = 1
                     new_tobj.associated_info[new_obj.info] = new_obj.id
                     if empty_index == -1:
                         new_tobj.id = len(self.scan_wise_fusion_output)
@@ -181,12 +194,20 @@ class Fusion:
         self.merge(merge_infos)
 
     def possible_to_merge(self, tobj1, tobj2):
-        distance = np.sqrt((tobj1.posx - tobj2.posx) ** 2 + (tobj1.posy - tobj2.posy) ** 2)
-        velocity_diff = np.sqrt((tobj1.velx - tobj2.velx) ** 2 + (tobj1.vely - tobj2.vely) ** 2)
-        position_in = distance < 10
-        velocity_in = velocity_diff < 10
         possible_to_associate = not set(tobj1.associated_info.keys()) & set(tobj2.associated_info.keys())
-        return position_in and velocity_in and possible_to_associate
+
+        if possible_to_associate:
+        
+            distance = np.sqrt((tobj1.posx - tobj2.posx) ** 2 + (tobj1.posy - tobj2.posy) ** 2)
+            velocity_diff = np.sqrt((tobj1.velx - tobj2.velx) ** 2 + (tobj1.vely - tobj2.vely) ** 2)
+
+            if distance < MERGE_DISTANCE_GATE and velocity_diff < 5:
+                position_in = 1 - distance/MERGE_DISTANCE_GATE
+                velocity_in = 1 - velocity_diff/5
+                if position_in * velocity_in > 0.2:
+                    return True
+            
+        return False
 
     def merge(self, merge_infos):
         for merge_info in merge_infos:
@@ -194,14 +215,28 @@ class Fusion:
             for merge_obj_idx in merge_info[1:]:
                 merge_obj = self.scan_wise_fusion_output[merge_obj_idx]
                 primary_obj.associated_info.update(merge_obj.associated_info)
-                # primary_obj.posx = (primary_obj.posx + merge_obj.posx) / 2
-                # primary_obj.posy = (primary_obj.posy + merge_obj.posy) / 2
-                # primary_obj.velx = (primary_obj.velx + merge_obj.velx) / 2
-                # primary_obj.vely = (primary_obj.vely + merge_obj.vely) / 2
                 self.scan_wise_fusion_output[merge_obj_idx] = TObj()
     
-    # def update_status_by_age(self):
-    #     for tobj in self.scan_wise_fusion_output:
+    def update_fusion_type(self):
+        for tobj in self.scan_wise_fusion_output:
+            if len(tobj.associated_info) >= 2:
+                tobj.fusion_type = 2
+
+    def update_age(self):
+        for tobj in self.scan_wise_fusion_output:
+            if tobj.update_state > 0 :
+                tobj.alive_age += 1
+
+    def update_state_by_age(self):
+        for tobj in self.scan_wise_fusion_output:
+            if tobj.fusion_type == 2:
+                if tobj.alive_age >= 3:
+                    tobj.update_state = 2
+            else:
+                if tobj.alive_age >= 20:
+                    tobj.update_state = 2
+
+
 
 
 def output_processing(fusion_outputs):
@@ -242,16 +277,16 @@ def fusion_main(config):
 
         for scan_num in tqdm(range(max_scan_num), desc = "intersection fusion tracking"):
             esterno.fusion(scan_num)
-        #     interno.fusion(scan_num)
+            interno.fusion(scan_num)
 
-        # intersection_fusion_outputs = {'esterno': esterno.fusion_outputs,
-        #                                'interno': interno.fusion_outputs}
+        intersection_fusion_outputs = {'esterno': esterno.fusion_outputs,
+                                       'interno': interno.fusion_outputs}
 
-        # verona.load_intersection_data(intersection_fusion_outputs)
+        verona.load_intersection_data(intersection_fusion_outputs)
 
-        # for scan_num in tqdm(range(max_scan_num), desc = "k-city fusion tracking"):
-        #     verona.fusion(scan_num)
+        for scan_num in tqdm(range(max_scan_num), desc = "k-city fusion tracking"):
+            verona.fusion(scan_num)
         
         break
 
-    return esterno.fusion_outputs
+    return verona.fusion_outputs

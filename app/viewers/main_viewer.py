@@ -255,7 +255,7 @@ class KCityFusionObjView:
     def draw_kobj(self, current_scan_kcity_fusion_obj):
         font = pygame.font.Font(None, 20)  # 크기 24로 설정
         for kobj in current_scan_kcity_fusion_obj:
-            if not kobj.info:
+            if kobj.update_state < 2:
                 continue
             white = (255,255,255)
             posx =  -kobj.posx 
@@ -292,17 +292,22 @@ class KCityFusionObjView:
                     ]
             
             id_text = str(kobj.id)  # ID를 문자열로 변환
-            asso_info_text = str(kobj.associated_info)
+            if len(kobj.associated_info) >= 3:
+                color = (0,0,255)
+            elif len(kobj.associated_info) >= 2:
+                color = (255,0,0)
+            else:
+                color = (255,255,255)
             pos = (ul_pos, ur_pos)
 
             # 텍스트를 렌더링 (안티앨리어싱: True, 색상: 흰색)
-            text_surface = font.render(id_text + ' '+ asso_info_text, True, (0, 100, 0))
+            text_surface = font.render(id_text, True, (0, 100, 0))
 
             # 텍스트를 pos 위치에 그리기
             self.screen.blit(text_surface, pos)
 
             pygame.draw.circle(self.screen, (255,255,255), (posx, posy), 2, 0)
-            pygame.draw.polygon(self.screen, white, polygon_pos, 2)
+            pygame.draw.polygon(self.screen, color, polygon_pos, 2)
             
 
     def rotate_point(self, x, y, angle, origin_x, origin_y):
