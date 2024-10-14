@@ -37,6 +37,7 @@ class Fusion:
         for fusion_input in self.fusion_inputs.values():
             for objs in fusion_input:
                 for obj in objs:
+                    obj.associated = False
                     obj.deletion_age = 0
                     obj.associated_info = {}
                     obj.covariance = np.array([[16, 0, 0, 0],
@@ -103,7 +104,6 @@ class Fusion:
                 X_est = X_pred + np.dot(Kalman_gain, X_meas - X_pred)
                 P_est = P_pred - np.dot(Kalman_gain, P_pred)
 
-                # posx, posy, velx, vely, covariance는 새로 계산된 값으로 덮어쓰기 때문에 deepcopy 필요 없음
                 tobj.posx, tobj.posy, tobj.velx, tobj.vely = X_est[0, 0], X_est[1, 0], X_est[2, 0], X_est[3, 0]
                 tobj.covariance = P_est
 
@@ -146,7 +146,7 @@ class Fusion:
 
     def delete_obj(self):
         # associated_info가 없으면 빈 TObj() 객체를 넣고, 그렇지 않으면 기존 tobj 유지
-        self.scan_wise_fusion_output = [tobj if tobj.deletion_age <= 3 else TObj() for tobj in self.scan_wise_fusion_output]
+        self.scan_wise_fusion_output = [tobj if tobj.deletion_age <= 20 else TObj() for tobj in self.scan_wise_fusion_output]
 
 
     def find_empty_space(self):
@@ -233,7 +233,7 @@ class Fusion:
                 if tobj.alive_age >= 3:
                     tobj.update_state = 2
             else:
-                if tobj.alive_age >= 20:
+                if tobj.alive_age >= 30:
                     tobj.update_state = 2
 
 
@@ -242,24 +242,6 @@ class Fusion:
 def output_processing(fusion_outputs):
     pass
 
-# 예시: esterno와 interno radars
-esterno_radars = { 
-    '1.0.0.20' : Radar([45.43072430000016, 10.98769880000001], 9),
-    '1.0.0.21' : Radar([45.430227500000164, 10.987823700000048], 18),
-    '1.0.0.22' : Radar([45.430359, 10.9882485], 67),
-    '1.0.0.23' : Radar([45.430319, 10.9883385], 0),
-    '1.0.0.24' : Radar([45.43077730000001, 10.987771800000045], 246.71),
-    '1.0.0.25' : Radar([45.4301545, 10.9879317], -27.1)
-}
-
-interno_radars = { 
-    '1.0.0.10' : Radar([45.4317387, 10.9882638], 0),
-    '1.0.0.11' : Radar([45.4316862, 10.9886965], 0),
-    '1.0.0.12' : Radar([45.4316862, 10.9886965], 157.36),
-    '1.0.0.13' : Radar([45.4317387, 10.9882638], 0)
-}
-
-landmark_position = [45.4310364, 10.988078]
 
 def fusion_main(config):
     esterno = Fusion()
@@ -269,6 +251,7 @@ def fusion_main(config):
     folder_path, esterno_radars, interno_radars, landmark_position, max_scan_num = load_config(config)
 
     while True:
+
         esterno_fusion_inputs = input_processing(folder_path + '/esterno', esterno_radars, landmark_position, max_scan_num)
         interno_fusion_inputs = input_processing(folder_path + '/interno', interno_radars, landmark_position, max_scan_num)
 

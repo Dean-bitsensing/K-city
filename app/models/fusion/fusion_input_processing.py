@@ -15,7 +15,7 @@ class Radar:
     def __init__(self, gps_position, radar_orientation_deg):
 
         self.position = gps_position 
-        self.rad = np.deg2rad(radar_orientation_deg) 
+        self.rad = radar_orientation_deg
 
 def calculate_xy_distance(coord1, coord2):
         # 지구 반지름 (미터 단위)
@@ -121,14 +121,21 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
                                                 [math.sin(theta_meter), math.cos(theta_meter), radar_diff_y_meter],
                                                 [0,0,1]])
                     
+                    heading_angle_rad = np.deg2rad(radar.rad + 90)
+
+                    transition_matrix_velocity = np.array([
+                        [np.cos(heading_angle_rad), -np.sin(heading_angle_rad)],
+                        [np.sin(heading_angle_rad), np.cos(heading_angle_rad)]
+                    ])
+                    
                     position = np.array([[posx],[posy],[1]]) # posx, posy -> meter
                     position = np.dot(transition_matrix_meter,position)
 
                     posx = position[0][0]
                     posy = position[1][0]
 
-                    velocity = np.array([[velx],[vely],[1]])
-                    velocity = np.dot(transition_matrix_meter,velocity)
+                    velocity = np.array([[velx],[vely]])
+                    velocity = np.dot(transition_matrix_velocity,velocity)
 
                     velx = velocity[0][0]
                     vely = velocity[1][0]
