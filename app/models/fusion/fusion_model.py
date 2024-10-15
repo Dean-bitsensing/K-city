@@ -8,8 +8,13 @@ from dataclasses import asdict
 from .fusion_data_classes import Obj, TObj
 from .fusion_input_processing import *
 
-MERGE_DISTANCE_GATE = 10
+ASSOCIATE_DISTANCE_GATE = 10
+ASSOCIATE_VELOCITY_GATE = 5
 
+MERGE_DISTANCE_GATE = 10
+MEREGE_VELOCITY_GATE = 5
+
+MINMUM_MERGE_PROBOBILITY = 0.2
 class Fusion:
     def __init__(self):
         self.scan_wise_fusion_output = []  # can be iobj and kobj (flow: aobj -> tobj -> iobj -> tobj -> kobj)
@@ -114,6 +119,7 @@ class Fusion:
         self.merge_fusion_obj()
         self.update_age()
         self.update_state_by_age()
+        self.update_heading_angle_deg(scan_num)
 
     def fusion(self, scan_num):
         self.prediction()
@@ -135,8 +141,8 @@ class Fusion:
                 return obj
 
     def possible_to_associate(self, tobj1, tobj2):
-        position_in = abs(tobj1.posx - tobj2.posx) < 10 and abs(tobj1.posy - tobj2.posy) < 10
-        velocity_in = abs(tobj1.velx - tobj2.velx) < 5 and abs(tobj1.vely - tobj2.vely) < 5
+        position_in = abs(tobj1.posx - tobj2.posx) < ASSOCIATE_DISTANCE_GATE and abs(tobj1.posy - tobj2.posy) < ASSOCIATE_DISTANCE_GATE
+        velocity_in = abs(tobj1.velx - tobj2.velx) < ASSOCIATE_VELOCITY_GATE and abs(tobj1.vely - tobj2.vely) < ASSOCIATE_VELOCITY_GATE
         return position_in and velocity_in
 
     def check_to_delete(self):
@@ -201,10 +207,10 @@ class Fusion:
             distance = np.sqrt((tobj1.posx - tobj2.posx) ** 2 + (tobj1.posy - tobj2.posy) ** 2)
             velocity_diff = np.sqrt((tobj1.velx - tobj2.velx) ** 2 + (tobj1.vely - tobj2.vely) ** 2)
 
-            if distance < MERGE_DISTANCE_GATE and velocity_diff < 5:
+            if distance < MERGE_DISTANCE_GATE and velocity_diff < MEREGE_VELOCITY_GATE:
                 position_in = 1 - distance/MERGE_DISTANCE_GATE
-                velocity_in = 1 - velocity_diff/5
-                if position_in * velocity_in > 0.2:
+                velocity_in = 1 - velocity_diff/MEREGE_VELOCITY_GATE
+                if position_in * velocity_in > MINMUM_MERGE_PROBOBILITY:
                     return True
             
         return False
@@ -217,6 +223,7 @@ class Fusion:
                 primary_obj.associated_info.update(merge_obj.associated_info)
                 self.scan_wise_fusion_output[merge_obj_idx] = TObj()
     
+
     def update_fusion_type(self):
         for tobj in self.scan_wise_fusion_output:
             if len(tobj.associated_info) >= 2:
@@ -237,10 +244,20 @@ class Fusion:
                     tobj.update_state = 2
 
 
+    def update_heading_angle_deg(self, scan_num):
+        for tobj in self.scan_wise_fusion_output:
+            if tobj.update_state >= 1:
+                heading_angle_deg_sum = 0
+                heading_angle_deg_num = len(tobj.associated_info)
+                if not heading_angle_deg_num:
+                    continue
+                for ip_address in tobj.associated_info.keys():
+                    target_obj_id = tobj.associated_info[ip_address]
+                    scan_obj = self.find_obj_with_id(self.fusion_inputs[ip_address][scan_num], target_obj_id)
+                    heading_angle_deg_sum += scan_obj.heading_angle_deg
 
+                tobj.heading_angle_deg = heading_angle_deg_sum/heading_angle_deg_num
 
-def output_processing(fusion_outputs):
-    pass
 
 
 def fusion_main(config):

@@ -10,7 +10,8 @@ class MainViewer:
         self.running = True
         self.paused = True
         self.delete_mode = False
-        self.fusion_only_mode = False
+        self.fusion_only_mode = True
+        self.radar_zone_view = False
         self.current_scan = 0
         self.before_scan = 0
         self.class_init()
@@ -21,7 +22,7 @@ class MainViewer:
 
         self.grid = GridView(self.model.grid_model, self.screen)
         self.radar_postions = MultipleRadarPositionView(self.model,self.screen)
-        self.kcity_fusion = KCityFusionObjView(self.model, self.screen)
+        self.track_view = TrackView(self.model, self.screen)
         self.cambound = CamBoundView(self.model.cam_bound_model, self.screen)
         self.cam_left_button = CamChangeLeftButtonView(self.model.cam_change_left_button_model, self.screen)
         self.cam_right_button = CamChangeRightButtonView(self.model.cam_change_right_button_model, self.screen)
@@ -43,8 +44,10 @@ class MainViewer:
         self.radar_postions.draw_radar_positions()
         # self.radar_postions.draw_vision_object()
         if not self.fusion_only_mode:
-            self.radar_postions.draw_fusion_object()
-            self.radar_postions.draw_fusion_object_index()
+            self.track_view.draw_fobj()
+        
+        if self.radar_zone_view:
+            self.radar_postions.draw_radar_positions()
             self.radar_postions.draw_radar_zone()
 
         if self.delete_mode:
@@ -69,7 +72,7 @@ class MainViewer:
         self.data_info_window.draw_scan_info(self.current_scan)
         
     def draw_fusion_obj(self, current_scan_kcity_fusion_obj):
-        self.kcity_fusion.draw_kobj(current_scan_kcity_fusion_obj)
+        self.track_view.draw_kobj(current_scan_kcity_fusion_obj)
     
 
 class GridView:
@@ -230,7 +233,7 @@ class BackGroundImageView:
         pygame.draw.circle(self.screen, self.model.center_point_color, (self.center_x, self.center_y), 5, 0)
 
 
-class KCityFusionObjView:
+class TrackView:
     def __init__(self, model, screen):
         self.model = model
         self.screen = screen
@@ -253,84 +256,20 @@ class KCityFusionObjView:
         return check_x and check_y
     
     def draw_kobj(self, current_scan_kcity_fusion_obj):
-        font = pygame.font.Font(None, 20)  # 크기 24로 설정
+
         for kobj in current_scan_kcity_fusion_obj:
             if kobj.update_state < 2:
                 continue
-            white = (255,255,255)
-            posx =  kobj.posx 
-            posy =  - kobj.posy 
-            width = kobj.width 
-            length = kobj.length 
-            heading_angle_deg = kobj.heading_angle_deg
 
-            ul_pos = [int(posx - length/2), int(posy - width/2)]
-            ur_pos = [int(posx - length/2), int(posy + width/2)]
-            dl_pos = [int(posx + length/2), int(posy - width/2)]
-            dr_pos = [int(posx + length/2), int(posy + width/2)]
+            self.draw_single_obj(kobj)
 
-            ul_pos[0] = self.meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[0] += self.center_x
-            ul_pos[1] = self.meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[1] += self.center_y
-
-            ur_pos[0] = self.meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[0] += self.center_x
-            ur_pos[1] = self.meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[1] += self.center_y
-
-            dl_pos[0] = self.meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[0] += self.center_x
-            dl_pos[1] = self.meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[1] += self.center_y
-
-            dr_pos[0] = self.meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[0] += self.center_x
-            dr_pos[1] = self.meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[1] += self.center_y
-        
-
-            polygon_pos = [
-                        dl_pos,                        
-                        ul_pos,
-                        ur_pos,
-                        dr_pos,
-                    ]
-            
-            id_text = str(kobj.id)  # ID를 문자열로 변환
-            if len(kobj.associated_info) >= 3:
-                color = (0,0,255)
-            elif len(kobj.associated_info) >= 2:
-                color = (255,0,0)
-            else:
-                color = (255,255,255)
-
-            posx_pixel = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-            posy_pixel = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-
-            posx_pixel += self.center_x
-            posy_pixel += self.center_y
-
-            pos = (posx_pixel, posy_pixel)
-
-            # 텍스트를 렌더링 (안티앨리어싱: True, 색상: 흰색)
-            text_surface = font.render(id_text, True, (0, 100, 0))
-
-            # 텍스트를 pos 위치에 그리기
-            self.screen.blit(text_surface, pos)
-
-            pygame.draw.circle(self.screen, color, (posx_pixel, posy_pixel), 2, 0)
-            pygame.draw.polygon(self.screen, color, polygon_pos, 2)
-            
-
-    def tf(self, pos : tuple , transition_matrix : list):
-            
-            position = np.array([[pos[0]],[pos[1]],[1]])
-            position = np.dot(transition_matrix,position)
-            pos[0] = position[0][0]
-            pos[1] = position[1][0]
-
-            return pos
+    def draw_fobj(self):
+        for intersection in self.model.intersections:
+            for atm in intersection.atms:
+                if not atm.view:
+                    continue
+                for fobj in atm.current_scan_data.fusion_object_data:
+                    self.draw_single_obj(fobj, atm.color)
     
 
     def meters_to_pixels(self, meters, lat, zoom, map_size, window_size):
@@ -355,6 +294,86 @@ class KCityFusionObjView:
         pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
 
         return pixels_on_window
+    
+    def rotate_point(self, x, y, angle, origin_x, origin_y):
+        """ (x, y)를 중심(origin_x, origin_y) 기준으로 angle 만큼 회전시킨 좌표를 반환 """
+        radians = math.radians(-angle)
+        cos_theta = math.cos(radians)
+        sin_theta = math.sin(radians)
+        
+        # 원점에서의 좌표 계산
+        translated_x = x - origin_x
+        translated_y = y - origin_y
+
+        # 회전 변환
+        rotated_x = translated_x * cos_theta - translated_y * sin_theta
+        rotated_y = translated_x * sin_theta + translated_y * cos_theta
+
+        # 원점 복귀
+        final_x = rotated_x + origin_x
+        final_y = rotated_y + origin_y
+
+        return [final_x, final_y]    
+    
+    def draw_single_obj(self, obj, color = (255,255,255)):
+        font = pygame.font.Font(None, 20)  
+
+        posx =  obj.posx 
+        posy =  - obj.posy 
+        width = obj.width 
+        length = obj.length 
+        heading_angle_deg = obj.heading_angle_deg
+
+        polygon_pos = self.get_polygon_pos(posx, posy, width, length, heading_angle_deg)   
+
+        posx_pixel, posy_pixel = self.get_pixel_position(posx, posy)
+
+
+        pygame.draw.circle(self.screen, color, (posx_pixel, posy_pixel), 2, 0)
+        pygame.draw.polygon(self.screen, color, polygon_pos, 2)
+
+    def get_pixel_position(self, posx, posy):
+        posx_pixel = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+        posy_pixel = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+        posx_pixel += self.center_x
+        posy_pixel += self.center_y
+
+        return posx_pixel, posy_pixel
+    
+    def get_polygon_pos(self, posx, posy, width, length, heading_angle_deg):
+
+        ul_pos = [int(posx - length/2), int(posy - width/2)]
+        ur_pos = [int(posx - length/2), int(posy + width/2)]
+        dl_pos = [int(posx + length/2), int(posy - width/2)]
+        dr_pos = [int(posx + length/2), int(posy + width/2)]
+
+        ul_pos = self.rotate_point(*ul_pos, heading_angle_deg, posx, posy)
+        ur_pos = self.rotate_point(*ur_pos, heading_angle_deg, posx, posy)
+        dl_pos = self.rotate_point(*dl_pos, heading_angle_deg, posx, posy)
+        dr_pos = self.rotate_point(*dr_pos, heading_angle_deg, posx, posy)
+
+        ul_pos[0] = self.meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ul_pos[0] += self.center_x
+        ul_pos[1] = self.meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ul_pos[1] += self.center_y
+
+        ur_pos[0] = self.meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ur_pos[0] += self.center_x
+        ur_pos[1] = self.meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ur_pos[1] += self.center_y
+
+        dl_pos[0] = self.meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dl_pos[0] += self.center_x
+        dl_pos[1] = self.meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dl_pos[1] += self.center_y
+
+        dr_pos[0] = self.meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dr_pos[0] += self.center_x
+        dr_pos[1] = self.meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dr_pos[1] += self.center_y
+
+        return [ dl_pos, ul_pos, ur_pos, dr_pos ] 
     
 class MultipleRadarPositionView:
     def __init__(self, model, screen):
@@ -428,26 +447,6 @@ class MultipleRadarPositionView:
                 # 텍스트 화면에 표시
                 self.screen.blit(text, text_rect)
     
-    def draw_vision_object(self):
-        
-        for data in self.model.logging_data:
-            for vobj in data.current_scan_data.vision_object_data:
-                if not self.check_in_grid_window(vobj.posx, vobj.posy):
-                    continue
-                if vobj.id in data.selected_vobj_id:
-                    pygame.draw.circle(self.screen, (0,0,0), (vobj.posx, vobj.posy), 2, 0)
-                    pygame.draw.circle(self.screen, (250,250,250), (vobj.posx, vobj.posy), 3, 1)
-                else:
-                    pygame.draw.circle(self.screen, data.current_scan_data.color, (vobj.posx, vobj.posy), 2, 0)
-                # pygame.draw.line(self.screen, data.speed_color, (vobj.posx, vobj.posy), (vobj.velx + vobj.posx, vobj.vely + vobj.posy), 1)
-                # pygame.draw.circle(self.screen, RED, (vobj.velx, vobj.vely), 2, 0)
-                polygon_pos = [
-                    vobj.dl_pos,
-                    vobj.ul_pos,
-                    vobj.ur_pos,
-                    vobj.dr_pos,
-                ]
-                # pygame.draw.polygon(self.screen, data.color, polygon_pos, 2) # vision object square box
 
     def draw_fusion_object(self):
         for intersection in self.model.intersections:
@@ -455,43 +454,117 @@ class MultipleRadarPositionView:
                 if not atm.view:
                     continue
                 for fobj in atm.current_scan_data.fusion_object_data:
-                    if not self.check_in_grid_window(fobj.trns_posx, fobj.trns_posy):
-                        continue
-                    if fobj.id in atm.selected_fobj_id:
-                        pygame.draw.circle(self.screen, (0,0,0), (fobj.trns_posx, fobj.trns_posy), 2, 0)
-                        pygame.draw.circle(self.screen, (250,250,250), (fobj.trns_posx, fobj.trns_posy), 3, 1)
-                    else:
-                        pygame.draw.circle(self.screen, atm.color, (fobj.trns_posx, fobj.trns_posy), 2, 0)
-                    # pygame.draw.line(self.screen, data.speed_color, (fobj.posx, fobj.posy), (fobj.velx + fobj.posx, fobj.vely + fobj.posy), 1)
-                    # pygame.draw.circle(self.screen, RED, (fobj.velx, fobj.vely), 2, 0)
-                    polygon_pos = [
-                        fobj.dl_pos,
-                        
-                        fobj.ul_pos,
-                        fobj.ur_pos,
-                        fobj.dr_pos,
-                    ]
-                    pygame.draw.polygon(self.screen, atm.color, polygon_pos, 2) # vision object square box
+                    self.draw_single_obj(fobj)
+                    
 
-    def draw_fusion_object_index(self): 
-        font = pygame.font.Font(None, 20)  # 크기 24로 설정
+    def meters_to_pixels(self, meters, lat, zoom, map_size, window_size):
 
-        for intersection in self.model.intersections: # TODO 현재 모든 atm데이터에 대해서 다 그리고 있지만, atm별로 하는 것으로 구분할 필요있음
-            for atm in intersection.atms:
-                if not atm.view:
-                    continue
-                for fobj in atm.current_scan_data.fusion_object_data:
-                    if not self.check_in_grid_window(fobj.trns_posx, fobj.trns_posy):
-                        continue
+        # 지구의 둘레 (Equatorial Circumference) = 40,075km
+        EARTH_RADIUS = 6378137  # meters
 
-                    id_text = str(fobj.id)  # ID를 문자열로 변환
-                    pos = (fobj.trns_posx, fobj.trns_posy)
+        # 위도를 라디안으로 변환
+        lat_rad = math.radians(lat)
 
-                    # 텍스트를 렌더링 (안티앨리어싱: True, 색상: 흰색)
-                    text_surface = font.render(id_text, True, (0, 100, 0))
+        # 지도 상에서 한 픽셀당 미터를 계산 (줌 레벨과 위도에 따라 다름)
+        meters_per_pixel = (math.cos(lat_rad) * 2 * math.pi * EARTH_RADIUS) / (2 ** zoom * 256)
 
-                    # 텍스트를 pos 위치에 그리기
-                    self.screen.blit(text_surface, pos)
+        # 주어진 미터를 원본 지도 상의 픽셀로 변환
+        pixels = meters / meters_per_pixel
+
+        # 창 크기 대비 지도 크기에 따른 비율로 스케일링
+        scale_x = window_size[0] / map_size[0]
+        scale_y = window_size[1] / map_size[1]
+
+        # 창에서의 픽셀 크기로 변환
+        pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
+
+        return pixels_on_window
+    
+    def rotate_point(self, x, y, angle, origin_x, origin_y):
+        """ (x, y)를 중심(origin_x, origin_y) 기준으로 angle 만큼 회전시킨 좌표를 반환 """
+        radians = math.radians(-angle)
+        cos_theta = math.cos(radians)
+        sin_theta = math.sin(radians)
+        
+        # 원점에서의 좌표 계산
+        translated_x = x - origin_x
+        translated_y = y - origin_y
+
+        # 회전 변환
+        rotated_x = translated_x * cos_theta - translated_y * sin_theta
+        rotated_y = translated_x * sin_theta + translated_y * cos_theta
+
+        # 원점 복귀
+        final_x = rotated_x + origin_x
+        final_y = rotated_y + origin_y
+
+        return [final_x, final_y]    
+    
+    def draw_single_obj(self, obj):
+        font = pygame.font.Font(None, 20)  
+
+        posx =  obj.posx 
+        posy =  - obj.posy 
+        width = obj.width 
+        length = obj.length 
+        heading_angle_deg = obj.heading_angle_deg
+        id_text = str(obj.id)  # ID를 문자열로 변환
+        color = (255,255,255)
+
+        polygon_pos = self.get_polygon_pos(posx, posy, width, length, heading_angle_deg)   
+
+        posx_pixel, posy_pixel = self.get_pixel_position(posx, posy)
+
+        text_surface = font.render(id_text, True, (0, 100, 0))
+
+        self.screen.blit(text_surface, (posx_pixel, posy_pixel))
+
+        pygame.draw.circle(self.screen, color, (posx_pixel, posy_pixel), 2, 0)
+        pygame.draw.polygon(self.screen, color, polygon_pos, 2)
+
+    def get_pixel_position(self, posx, posy):
+        posx_pixel = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+        posy_pixel = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+
+        posx_pixel += self.center_x
+        posy_pixel += self.center_y
+
+        return posx_pixel, posy_pixel
+    
+    def get_polygon_pos(self, posx, posy, width, length, heading_angle_deg):
+
+        ul_pos = [int(posx - length/2), int(posy - width/2)]
+        ur_pos = [int(posx - length/2), int(posy + width/2)]
+        dl_pos = [int(posx + length/2), int(posy - width/2)]
+        dr_pos = [int(posx + length/2), int(posy + width/2)]
+
+        ul_pos = self.rotate_point(*ul_pos, heading_angle_deg, posx, posy)
+        ur_pos = self.rotate_point(*ur_pos, heading_angle_deg, posx, posy)
+        dl_pos = self.rotate_point(*dl_pos, heading_angle_deg, posx, posy)
+        dr_pos = self.rotate_point(*dr_pos, heading_angle_deg, posx, posy)
+
+        ul_pos[0] = self.meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ul_pos[0] += self.center_x
+        ul_pos[1] = self.meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ul_pos[1] += self.center_y
+
+        ur_pos[0] = self.meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ur_pos[0] += self.center_x
+        ur_pos[1] = self.meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ur_pos[1] += self.center_y
+
+        dl_pos[0] = self.meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dl_pos[0] += self.center_x
+        dl_pos[1] = self.meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dl_pos[1] += self.center_y
+
+        dr_pos[0] = self.meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dr_pos[0] += self.center_x
+        dr_pos[1] = self.meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dr_pos[1] += self.center_y
+
+        return [ dl_pos, ul_pos, ur_pos, dr_pos ] 
+
     
 class DataInfoWindowView:
     def __init__(self, model, screen):

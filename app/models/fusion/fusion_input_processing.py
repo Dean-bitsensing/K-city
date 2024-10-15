@@ -15,7 +15,7 @@ class Radar:
     def __init__(self, gps_position, radar_orientation_deg):
 
         self.position = gps_position 
-        self.rad = radar_orientation_deg
+        self.deg = radar_orientation_deg
 
 def calculate_xy_distance(coord1, coord2):
         # 지구 반지름 (미터 단위)
@@ -76,15 +76,31 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
         ip = file_path.split('_')[-1][:-3]
         fusion_inputs[ip] = []
         radar = radars[ip]
+
         radar_gps = radar.position
         landmark_gps = landmark_position
 
-        # x, y 거리 계산
         x_distance, y_distance = calculate_xy_distance(landmark_gps, radar_gps)
+
+        radar_diff_x_meter = x_distance
+        radar_diff_y_meter = y_distance
+
+        theta = np.deg2rad(radar.deg + 90)
+        
+        transition_matrix_meter = np.array([[math.cos(theta), - math.sin(theta), radar_diff_x_meter],
+                                    [math.sin(theta), math.cos(theta), radar_diff_y_meter],
+                                    [0,0,1]])
+        
+
+        transition_matrix_vector = np.array([
+            [np.cos(theta), -np.sin(theta)],
+            [np.sin(theta), np.cos(theta)]
+        ])
+
         # h5 파일 열기
         with h5py.File(file_path, 'r') as h5_file_data:
             data_dict = h5_file_data
-            for scan_num in tqdm(range(max_scan_num)):  # 테스트를 위해 10번만 처리
+            for scan_num in tqdm(range(max_scan_num)): 
                 scan_wise_fusion_inputs = []
                 for fobj in data_dict['SCAN_{:05d}'.format(scan_num)]['Object'][:]:
                     new_obj = Obj()
@@ -108,38 +124,21 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
                     new_obj.fusion_type = fobj[16]
                     new_obj.fusion_age  = fobj[17]
 
-                    # 좌표 변환
-                    x_distance, y_distance = calculate_xy_distance(landmark_gps, radar_gps)
-                    radar_diff_x_meter = x_distance
-                    radar_diff_y_meter = y_distance
-
-                    azi_theta = radar.rad * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
-
-                    theta_meter = azi_theta + math.pi/2
                     
-                    transition_matrix_meter = np.array([[math.cos(theta_meter), - math.sin(theta_meter), radar_diff_x_meter],
-                                                [math.sin(theta_meter), math.cos(theta_meter), radar_diff_y_meter],
-                                                [0,0,1]])
-                    
-                    heading_angle_rad = np.deg2rad(radar.rad + 90)
-
-                    transition_matrix_velocity = np.array([
-                        [np.cos(heading_angle_rad), -np.sin(heading_angle_rad)],
-                        [np.sin(heading_angle_rad), np.cos(heading_angle_rad)]
-                    ])
-                    
-                    position = np.array([[posx],[posy],[1]]) # posx, posy -> meter
+                    position = np.array([[posx],[posy],[1]]) 
                     position = np.dot(transition_matrix_meter,position)
 
                     posx = position[0][0]
                     posy = position[1][0]
 
                     velocity = np.array([[velx],[vely]])
-                    velocity = np.dot(transition_matrix_velocity,velocity)
+                    velocity = np.dot(transition_matrix_vector,velocity)
 
                     velx = velocity[0][0]
                     vely = velocity[1][0]
 
+
+                    heading_angle_deg += (np.rad2deg(theta))
 
                     # 업데이트된 좌표와 속도 및 heading angle 적용
                     new_obj.posx   = posx
@@ -148,7 +147,7 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
                     new_obj.vely   = vely
                     new_obj.width  = width
                     new_obj.length = length
-                    new_obj.heading_angle_deg += radar.rad
+                    new_obj.heading_angle_deg = heading_angle_deg
                     scan_wise_fusion_inputs.append(new_obj)
                 fusion_inputs[ip].append(scan_wise_fusion_inputs)
     return fusion_inputs

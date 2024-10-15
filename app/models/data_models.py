@@ -271,38 +271,18 @@ class ScanData(Atm):
         self.fusion_object_data = []
         self.fusion_object_data_vel = []
 
-        self.azi_theta = self.atm_azi_angle
+        theta = np.deg2rad(self.atm_azi_angle + 90)
 
-        azi_theta = self.azi_theta * math.pi / 180 #  북쪽기준으로 반시계 방향으로 얼마나 회전했는가
-
-        theta_meter = azi_theta + math.pi/2
-        
-        transition_matrix_meter = np.array([[math.cos(theta_meter), - math.sin(theta_meter), self.radar_diff_x_meter],
-                                      [math.sin(theta_meter), math.cos(theta_meter), self.radar_diff_y_meter],
-                                      [0,0,1]])
+        transition_matrix_meter = np.array([[math.cos(theta), - math.sin(theta), self.radar_diff_x_meter],
+                            [math.sin(theta), math.cos(theta), self.radar_diff_y_meter],
+                            [0,0,1]])
         
 
+        transition_matrix_vector = np.array([
+            [np.cos(theta), -np.sin(theta)],
+            [np.sin(theta), np.cos(theta)]
+        ])
         
-        def tf(pos, transition_matrix, heading_matrix, posx, posy):
-            
-            position = np.array([[pos[0]],[pos[1]],[1]])
-            
-            position = np.dot(transition_matrix,position)
-            
-            
-            pos[0] = position[0][0]
-            pos[1] = position[1][0]
-
-            posx_c = pos[0] - posx
-            posy_c = pos[1] - posy
-
-            position = np.array([[posx_c],[posy_c],[1]])
-            position = np.dot(heading_matrix,position)
-
-            pos[0] = position[0][0] + posx
-            pos[1] = -(position[1][0] + posy)
-
-            return pos
         
         for fobj in self.current_scan_data['Object'][:]:
             new_fobj = FusionObj()
@@ -316,6 +296,21 @@ class ScanData(Atm):
             width               = fobj[13]
             length              = fobj[14]
 
+            position = np.array([[posx],[posy],[1]]) 
+            position = np.dot(transition_matrix_meter,position)
+
+            posx = position[0][0]
+            posy = position[1][0]
+
+            velocity = np.array([[velx],[vely]])
+            velocity = np.dot(transition_matrix_vector,velocity)
+
+            velx = velocity[0][0]
+            vely = velocity[1][0]
+
+
+            heading_angle_deg += (np.rad2deg(theta))
+
             new_fobj.posx   = posx
             new_fobj.posy   = posy
             new_fobj.velx   = velx
@@ -324,73 +319,7 @@ class ScanData(Atm):
             new_fobj.length = length
             new_fobj.heading_angle_deg = heading_angle_deg
 
-
-            position = np.array([[posx],[posy],[1]]) # posx, posy -> meter
-            position = np.dot(transition_matrix_meter,position)
-
-            posx_meter = position[0][0]
-            posy_meter = position[1][0]
-
-            posy_meter_inv = - position[1][0]
-            posx_pixel = meters_to_pixels(posx_meter, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            posy_pixel = meters_to_pixels(posy_meter_inv, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-
-            posx_pixel += self.center_x
-            posy_pixel += self.center_y
-
-            # posx = -posx
-            # velx = -velx
-            
-            heading_angle_rad = heading_angle_deg * math.pi/180
-            ul_pos = [int(posx + length/2), int(posy + width/2)]
-            ur_pos = [int(posx + length/2), int(posy - width/2)]
-            dl_pos = [int(posx - length/2), int(posy + width/2)]
-            dr_pos = [int(posx - length/2), int(posy - width/2)]
-
-            heading_transition_matrix = np.array([[math.cos(heading_angle_rad), - math.sin(heading_angle_rad), 0],
-                                      [math.sin(heading_angle_rad), math.cos(heading_angle_rad), 0],
-                                      [0,0,1]])
-            
-            new_fobj.before_posx = -posx
-            new_fobj.before_posy = posy
-            
-
-            new_fobj.trns_posx = posx_pixel
-            new_fobj.trns_posy = posy_pixel
-            
-            ul_pos = tf(ul_pos, transition_matrix_meter, heading_transition_matrix, posx_meter, posy_meter)
-            ur_pos = tf(ur_pos, transition_matrix_meter, heading_transition_matrix, posx_meter, posy_meter)
-            dl_pos = tf(dl_pos, transition_matrix_meter, heading_transition_matrix, posx_meter, posy_meter)
-            dr_pos = tf(dr_pos, transition_matrix_meter, heading_transition_matrix, posx_meter, posy_meter)
-
-            ul_pos[0] = meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[0] += self.center_x
-            ul_pos[1] = meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ul_pos[1] += self.center_y
-
-            ur_pos[0] = meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[0] += self.center_x
-            ur_pos[1] = meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            ur_pos[1] += self.center_y
-
-            dl_pos[0] = meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[0] += self.center_x
-            dl_pos[1] = meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dl_pos[1] += self.center_y
-
-            dr_pos[0] = meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[0] += self.center_x
-            dr_pos[1] = meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
-            dr_pos[1] += self.center_y
-        
-            
-            
-            new_fobj.ul_pos = ul_pos
-            new_fobj.ur_pos = ur_pos
-            new_fobj.dl_pos = dl_pos
-            new_fobj.dr_pos = dr_pos
-
-            self.fusion_object_data.append(new_fobj)
+            self.fusion_object_data.append(new_fobj)           
 
 
     def parsing_vision_object_data(self):

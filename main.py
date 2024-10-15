@@ -67,7 +67,9 @@ def run_pygame(config):
             viewer.before_scan = viewer.current_scan
             model.load_data(viewer.current_scan)
         viewer.draw()
-        viewer.draw_fusion_obj(kcity_fusion_objs[viewer.current_scan])
+
+        if viewer.fusion_only_mode:
+            viewer.draw_fusion_obj(kcity_fusion_objs[viewer.current_scan])
         # pygame.display.flip() # 화면 업데이트                                                
         pygame.display.update()
         clock.tick(config['fps']) 
