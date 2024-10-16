@@ -49,6 +49,7 @@ class MainViewer:
         if self.radar_zone_view:
             self.radar_postions.draw_radar_positions()
             self.radar_postions.draw_radar_zone()
+            self.radar_postions.draw_radar_points()
 
         if self.delete_mode:
             self.data_info_window.draw_delete_info()
@@ -407,6 +408,8 @@ class MultipleRadarPositionView:
                         left_point_end = (zone.left_x[step+1],zone.left_y[step+1])
                         right_point_start = (zone.right_x[step],zone.right_y[step])
                         right_point_end = (zone.right_x[step+1],zone.right_y[step+1])
+                        pygame.draw.circle(self.screen, (255, 0, 0), left_point_start, 5)  # 왼쪽 꼭지점
+                        pygame.draw.circle(self.screen, (255, 0, 0), right_point_start, 5)  # 오른쪽 꼭지점
                         pygame.draw.line(self.screen, atm.color, left_point_start, left_point_end, 3)
                         pygame.draw.line(self.screen, atm.color, right_point_start, right_point_end, 3)
 
@@ -422,11 +425,24 @@ class MultipleRadarPositionView:
                     font = pygame.font.Font(None, 20)
                     # text = font.render(atm.ip, True, self.model.cam_bound_model.cam_ip_box_color)  # 렌더링할 텍스트와 색상
                     
-                    # 텍스트를 렌더링 (안티앨리어싱: True, 색상: 흰색)
-                    text_surface = font.render(zone.guid, True, (0, 255, 0))
+                    # # 텍스트를 렌더링 (안티앨리어싱: True, 색상: 흰색)
+                    # text_surface = font.render(zone.guid, True, (0, 255, 0))
 
                     # 텍스트를 pos 위치에 그리기
-                    self.screen.blit(text_surface, left_start_point)
+                    # self.screen.blit(text_surface, left_start_point)
+
+    def draw_radar_points(self):
+        for intersection in self.model.intersections:
+            for atm in intersection.atms:
+                if atm.radar_zone_json == None:
+                    continue
+                for zone in atm.zones:
+                    for step in range(zone.step_number):
+                        left_point = (zone.left_x[step],zone.left_y[step])
+                        right_point = (zone.right_x[step],zone.right_y[step])
+                        pygame.draw.circle(self.screen, (255, 0, 0), left_point, 5)  # 왼쪽 꼭지점
+                        pygame.draw.circle(self.screen, (255, 0, 0), right_point, 5)  # 오른쪽 꼭지점
+
 
     def draw_radar_positions(self):
         for intersection in self.model.intersections:

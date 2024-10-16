@@ -16,6 +16,10 @@ class MainController:
         self.model = model
         self.viewer = viewer
 
+        self.selected_zone = None
+        self.selected_point = None
+        self.is_dragging = False
+
     def handle_event(self, event):
         if event.type == pygame.QUIT:
             self.viewer.running = False
@@ -33,6 +37,19 @@ class MainController:
                 pass 
             elif event.button == 3:  # right mouse button
                 self.handle_mouse_right_click(event.pos)
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            self.selected_zone = None
+            self.selected_point = None
+            self.is_dragging = False
+
+        if event.type == pygame.MOUSEMOTION and self.is_dragging and self.selected_zone is not None and self.selected_point is not None:
+            mouse_x,mouse_y = event.pos
+            if self.selected_point[0] == 'left':
+                self.selected_zone.left_x[self.selected_point[1]], self.selected_zone.left_y[self.selected_point[1]] = (mouse_x, mouse_y)
+            elif self.selected_point[0] == 'right':
+                self.selected_zone.right_x[self.selected_point[1]], self.selected_zone.right_y[self.selected_point[1]] = (mouse_x, mouse_y)
+
 
     def handle_keydown(self, event):
         if event.key == pygame.K_LEFT:
@@ -144,6 +161,9 @@ class MainController:
         
         elif event.key == pygame.K_d:
             self.viewer.delete_mode = not self.viewer.delete_mode
+        
+        elif event.key == pygame.K_r:
+            self.viewer.radar_zone_view = not self.viewer.radar_zone_view
 
         elif event.key == pygame.K_F2:
             self.model.view_mode[0] = 1
@@ -196,6 +216,15 @@ class MainController:
     def handle_save(self):
         result = create_window()
         if result:
+            for intersection in self.model.intersections:
+                for atm in intersection.atms:
+                    if atm.radar_zone_json == None:
+                        continue
+                    for zone in atm.zones:
+                        if zone.changed:
+                            atm.write_radar_zone_to_json()
+
+
             config = load_yaml('config.yaml')
             
             for intersection in self.model.intersections:
@@ -212,6 +241,31 @@ class MainController:
             print("ㅠㅠ")
 
     def handle_mouse_left_click(self, mouse_pos):
+        mouse_x, mouse_y = mouse_pos
+
+        for intersection in self.model.intersections:
+            for atm in intersection.atms:
+                if atm.radar_zone_json == None:
+                    continue
+                for zone in atm.zones:
+                    if self.is_dragging:
+                        break
+                    for step in range(zone.step_number):
+                        left_point = (zone.left_x[step],zone.left_y[step])
+                        right_point = (zone.right_x[step],zone.right_y[step])                        
+                        if pygame.Rect(left_point[0] - 5, left_point[1] - 5, 10, 10).collidepoint(mouse_x, mouse_y):
+                            zone.changed = True
+                            self.is_dragging = True
+                            self.selected_point = ('left', step)
+                            self.selected_zone = zone
+                            break
+                        if pygame.Rect(right_point[0] - 5, right_point[1] - 5, 10, 10).collidepoint(mouse_x, mouse_y):
+                            zone.changed = True
+                            self.is_dragging = True
+                            self.selected_point = ('right', step)
+                            self.selected_zone = zone
+                            break
+
         if self.model.vds_button_model.is_clicked(mouse_pos):
             selected_atms = []
             for intersection in self.model.intersections:
@@ -246,6 +300,7 @@ class MainController:
 
     def handle_mouse_right_click(self, mouse_pos):
         self.model.select_object(mouse_pos)
+
 
     def update_config(self, width, length):
         self.model.window_resize(width, length)

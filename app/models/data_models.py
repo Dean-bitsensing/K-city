@@ -48,7 +48,7 @@ class Intersection():
         self.h5_files = [f'{logging_data_path}/'+file for file in os.listdir(logging_data_path) if file.endswith('.h5')]
         
     def set_atms(self):
-        metadata_path = self.config['metadata_path']
+        self.metadata_path = self.config['metadata_path']
         # metadata_folders = [os.path.join(metadata_path, name) for name in os.listdir(metadata_path) 
         #               if os.path.isdir(os.path.join(metadata_path, name))]
         # print(metadata_folders)
@@ -60,7 +60,7 @@ class Intersection():
             azi_angle = self.config['radar_azi_angle_'+ip]
             atm_color = self.color_set[idx]
 
-            metadat_folder = os.path.join(metadata_path, ip)
+            metadat_folder = os.path.join(self.metadata_path, ip)
 
             # 각 JSON 파일을 읽어 파싱하는 부분 (UTF-8 인코딩 지정)
             try:
@@ -152,9 +152,12 @@ class Atm(Intersection):
         self.selected_fobj_id = []
         # self.config = 
 
+
+        self.center_x = 0 
+        self.center_y = 0 
+
     def get_scan_data(self, current_scan, center_x, center_y):
         
-
         current_scan_data = ScanData(current_scan, self)
         
         #current_scan_data.parsing_status() -> TODO: if gps coordinates become more accurate then will use sensor info 
@@ -176,11 +179,89 @@ class Atm(Intersection):
         self.selected = False
         self.selected_vobj_id = []
         self.selected_fobj_id = []
+    
+
+    def write_radar_zone_to_json(self):
+        metadata_folder = self.intersection.metadata_path
+        ip = self.ip
+
+        # JSON 파일 경로 설정
+
+        self.radar_diff_x = self.current_scan_data.radar_diff_x
+        self.radar_diff_y = self.current_scan_data.radar_diff_y
+        self.center_x = self.current_scan_data.center_x
+        self.center_y = self.current_scan_data.center_y
+        self.azi_theta = self.current_scan_data.azi_theta
+
+        radar_zone_file = os.path.join(metadata_folder, ip, 'radar_zone_json.json')
+
+        # 기존 JSON 데이터 읽어오기
+        try:
+            with open(radar_zone_file, 'r', encoding='utf-8-sig') as f:
+                radar_zone_data = json.load(f)
+        except FileNotFoundError:
+            print(f"Radar zone JSON file not found at {radar_zone_file}")
+            return
+
+        # 역변환 행렬 계산
+        azi_theta = self.azi_theta * math.pi / 180  # 북쪽 기준 반시계 방향 각도
+        theta = math.pi / 2 - azi_theta
+
+        # 변환 행렬
+        transition_matrix = np.array([[math.cos(theta), -math.sin(theta), self.radar_diff_x],
+                                    [math.sin(theta), math.cos(theta), self.radar_diff_y],
+                                    [0, 0, 1]])
+        transition_matrix2 = np.array([[1, 0, self.center_x],
+                                    [0, 1, self.center_y],
+                                    [0, 0, 1]])
+
+        # 역변환 행렬 계산
+        inverse_transform = np.linalg.inv(np.dot(transition_matrix2, transition_matrix))
+
+        # 변경된 좌표 데이터를 반영하여 JSON 파일 수정
+        radar_zone_count = len(self.zones)
+
+        for nth_zone in range(radar_zone_count):
+            zone = self.zones[nth_zone]
+            radar_zone_info = radar_zone_data['param']['setup']['detection_zone'][nth_zone]['lane_info']
+
+            # zone 좌표를 원래의 미터 단위로 변환하여 다시 기록
+            for idx in range(zone.step_number):
+                # 역변환 행렬 적용 (좌표를 원래 값으로 복원)
+                left_pos = np.array([[zone.left_x[idx]], [zone.left_y[idx]], [1]])
+                right_pos = np.array([[zone.right_x[idx]], [zone.right_y[idx]], [1]])
+
+                # 역변환
+                left_orig = np.dot(inverse_transform, left_pos)
+                right_orig = np.dot(inverse_transform, right_pos)
+
+                # 변환된 좌표를 미터로 변환 후 JSON에 저장
+                radar_zone_info['lane_pos']['left_lat'][idx] = pixels_to_meters(
+                    left_orig[1][0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x * 2, self.center_y * 2)
+                )
+                radar_zone_info['lane_pos']['left_long'][idx] = pixels_to_meters(
+                    (-1) * left_orig[0][0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x * 2, self.center_y * 2)
+                )
+                radar_zone_info['lane_pos']['right_lat'][idx] = pixels_to_meters(
+                    right_orig[1][0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x * 2, self.center_y * 2)
+                )
+                radar_zone_info['lane_pos']['right_long'][idx] = pixels_to_meters(
+                    (-1) * right_orig[0][0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x * 2, self.center_y * 2)
+                )
+
+        # 수정된 데이터를 JSON 파일로 기록
+        with open(radar_zone_file, 'w', encoding='utf-8') as f:
+            json.dump(radar_zone_data, f, ensure_ascii=False, indent=4)
+
+        print(f"Radar zone data successfully written to {radar_zone_file}")
+
+
 
 
 #Scan Data per ATM 
 class RadarZone:
     def __init__(self):
+        self.changed = False
         self.left_x = []
         self.left_y = []
         self.right_x = []
@@ -548,3 +629,26 @@ def meters_to_pixels(meters, lat, zoom, map_size, window_size):
     pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
 
     return pixels_on_window
+
+
+def pixels_to_meters(pixels, lat, zoom, map_size, window_size):
+    # 지구의 둘레 (Equatorial Circumference) = 40,075km
+    EARTH_RADIUS = 6378137  # meters
+
+    # 위도를 라디안으로 변환
+    lat_rad = math.radians(lat)
+
+    # 지도 상에서 한 픽셀당 미터를 계산 (줌 레벨과 위도에 따라 다름)
+    meters_per_pixel = (math.cos(lat_rad) * 2 * math.pi * EARTH_RADIUS) / (2 ** zoom * 256)
+
+    # 창 크기 대비 지도 크기에 따른 비율로 스케일링
+    scale_x = window_size[0] / map_size[0]
+    scale_y = window_size[1] / map_size[1]
+
+    # 창에서의 픽셀 크기를 지도 상의 픽셀 크기로 변환
+    pixels_on_map = pixels / ((scale_x + scale_y) / 2)  # 가로 세로 비율의 평균 사용
+
+    # 지도 상의 픽셀을 다시 미터로 변환
+    meters = pixels_on_map * meters_per_pixel
+
+    return meters
