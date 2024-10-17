@@ -40,7 +40,7 @@ def get_scan_num():
 def run_pygame(config):
     model = MainModel(config['verona'])
     pygame.init()
-    screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH), pygame.RESIZABLE)
+    screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH),pygame.RESIZABLE | pygame.SRCALPHA)
     pygame.display.set_caption('K-City develop tool')
 
     

@@ -1,9 +1,11 @@
 from .data_class_models import *
 from .colors import *
+from .loading import *
 import h5py, json
 import numpy as np
 import math
 import os
+import pygame
 import sys
 import requests
 from io import BytesIO
@@ -60,6 +62,10 @@ class Intersection():
             azi_angle = self.config['radar_azi_angle_'+ip]
             atm_color = self.color_set[idx]
 
+            max_FoV_left, max_FoV_right, max_range = find_max_FoV_and_range(h5_file)
+
+            # print(ip, np.rad2deg(max_FoV_left), np.rad2deg(max_FoV_right), max_range)
+
             metadat_folder = os.path.join(self.metadata_path, ip)
 
             # 각 JSON 파일을 읽어 파싱하는 부분 (UTF-8 인코딩 지정)
@@ -92,13 +98,17 @@ class Intersection():
 
             lut_lat     = None
             lut_long    = None
-            print(radar_lane_json)
+            # print(radar_lane_json)
             #TODO should be removed
             if ip[-2] == '1':
                 atm_color = INDIGO
             atm = Atm(lat, long, azi_angle, atm_color, h5_file, self.landmark, 
-                      radar_lane_json, radar_zone_json, image_lane_json, image_zone_json, lut_lat, lut_long, 
+                      radar_lane_json, radar_zone_json, 
+                      image_lane_json, image_zone_json, lut_lat, lut_long, 
                       self)
+            
+            atm.set_detection_zone(np.rad2deg(max_FoV_left), np.rad2deg(max_FoV_right), max_range)
+
             if atm not in self.atms:
                 self.atms.append(atm)
 
@@ -152,6 +162,7 @@ class Atm(Intersection):
         self.selected_fobj_id = []
         # self.config = 
 
+        self.detection_zone = None
 
         self.center_x = 0 
         self.center_y = 0 
@@ -168,13 +179,17 @@ class Atm(Intersection):
         # current_scan_data.parsing_radar_object_data()                 # 4. parse radar obj from h5 and change it to world coordinate -> TODO
         current_scan_data.parsing_image()                               # 5. parse image from h5 
 
+        current_scan_data.calc_atm_detection_zone_range()
         current_scan_data.calc_lane_and_zone()
         # if self.get_zone_lane_mode:
         #     current_scan_data.calc_lane_and_zone()
         #     self.get_zone_lane_mode = 0
 
         self.current_scan_data = current_scan_data
-    
+
+    def set_detection_zone(self, FoV_left, FoV_right, max_range):
+        self.detection_zone = DetectionZone(self, FoV_left, FoV_right, max_range)
+
     def clear_selected_obj_id(self):
         self.selected = False
         self.selected_vobj_id = []
@@ -287,6 +302,9 @@ class ScanData(Atm):
 
     def parsing_image(self):
         self.image = self.current_scan_data['Image'][()]
+
+    def calc_atm_detection_zone_range(self):
+        self.atm.detection_zone.pixel_radius = meters_to_pixels(self.atm.detection_zone.radius, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
 
     def calc_lane_and_zone(self):
         if self.atm.radar_zone_json == None:
@@ -570,9 +588,9 @@ class ScanData(Atm):
 
         # x, y 거리 계산
         x_distance, y_distance = calculate_xy_distance(landmark_gps, radar_gps)
-        print(f"Radar IP : {self.atm.ip}")
-        print(f"x 방향 거리 (동서 방향): {x_distance:.2f} meters")
-        print(f"y 방향 거리 (남북 방향): {y_distance:.2f} meters")
+        # print(f"Radar IP : {self.atm.ip}")
+        # print(f"x 방향 거리 (동서 방향): {x_distance:.2f} meters")
+        # print(f"y 방향 거리 (남북 방향): {y_distance:.2f} meters")
 
         self.latitiude = self.atm_lat
         self.longitude = self.atm_long
@@ -592,7 +610,51 @@ class ScanData(Atm):
         self.center_y = center_y
         self.radar_posx = radar_x
         self.radar_posy = radar_y    
-         
+
+class DetectionZone:
+    def __init__(self, atm, FoV_left, FoV_right, radius):
+        self.atm = atm
+        self.FoV_left = FoV_left
+        self.FoV_right = FoV_right
+        self.radius = radius
+        self.pixel_radius = 0 
+
+    def draw_sector(self, screen):
+        # 각도 계산
+        start_angle = math.radians((self.atm.atm_azi_angle + 90 - self.FoV_left))
+        end_angle = math.radians((self.atm.atm_azi_angle + 90 + self.FoV_right))
+        center = (self.atm.current_scan_data.radar_posx, self.atm.current_scan_data.radar_posy)
+        radius = self.pixel_radius
+
+        # 투명도 있는 색상 정의
+        color = (self.atm.color[0], self.atm.color[1], self.atm.color[2], 60)
+
+        # 부채꼴의 호를 그린다 (호는 반지름을 기준으로 그려진다).
+        temp_surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+
+        # 2. 부채꼴을 그릴 점들 계산
+        points = [(radius, radius)]  # 중심점 (temp_surface 기준 좌표)
+        step = 1  # 각도 간격 (1도)
+
+        for angle in range(int(math.degrees(start_angle)), int(math.degrees(end_angle)) + 1, step):
+            rad = math.radians(angle)
+            x = radius + radius * math.cos(rad)
+            y = radius - radius * math.sin(rad)  # Pygame의 y축이 아래로 증가하므로 빼줌
+            points.append((x, y))
+
+        # 마지막 끝점도 추가
+        end_pos = (
+            radius + radius * math.cos(end_angle),
+            radius - radius * math.sin(end_angle)
+        )
+        points.append(end_pos)
+
+        # 3. 임시 Surface에 부채꼴 그리기 (투명도 포함)
+        pygame.draw.polygon(temp_surface, color, points)
+
+        # 4. 임시 Surface를 메인 Surface에 복사 (blit)
+        screen.blit(temp_surface, (center[0] - radius, center[1] - radius))
+
 
 
 ### Calculation Functions ###

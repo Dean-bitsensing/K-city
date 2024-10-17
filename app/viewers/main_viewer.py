@@ -47,9 +47,11 @@ class MainViewer:
             self.track_view.draw_fobj()
         
         if self.radar_zone_view:
-            self.radar_postions.draw_radar_positions()
             self.radar_postions.draw_radar_zone()
-            self.radar_postions.draw_radar_points()
+
+            self.radar_postions.draw_radar_positions()
+            self.radar_postions.draw_radar_points()        
+            self.radar_postions.draw_radar_detection_zone()
 
         if self.delete_mode:
             self.data_info_window.draw_delete_info()
@@ -430,6 +432,12 @@ class MultipleRadarPositionView:
 
                     # 텍스트를 pos 위치에 그리기
                     # self.screen.blit(text_surface, left_start_point)
+        
+    def draw_radar_detection_zone(self):
+        for intersection in self.model.intersections:
+            for atm in intersection.atms:
+                if atm.selected:
+                    atm.detection_zone.draw_sector(self.screen)
 
     def draw_radar_points(self):
         for intersection in self.model.intersections:
