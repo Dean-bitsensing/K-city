@@ -1,1 +1,1 @@
-from .fusion_model import fusion_main
+from .fusion_model import fusion_main, fusion_main_temp

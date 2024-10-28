@@ -3,12 +3,10 @@ import h5py
 import numpy as np
 import utm  # UTM 좌표계로 변환
 import math
+import json
 from .fusion_data_classes import *
 from tqdm import tqdm
-# GPS 좌표 (위도, 경도)를 UTM 좌표로 변환하는 함수
-def gps_to_utm(latitude, longitude):
-    utm_coords = utm.from_latlon(latitude, longitude)
-    return np.array([utm_coords[0], utm_coords[1]])  # UTM 좌표계에서 x, y 반환
+
 
 # Radar 클래스 정의
 class Radar:
@@ -59,6 +57,7 @@ def load_config(config):
         '1.0.0.13': Radar(config['interno']['radar_gps_1.0.0.13'], config['interno']['radar_azi_angle_1.0.0.13']),
     }
 
+
     # landmark_position 리스트를 생성
     landmark_position = config['info']['center_gps']
 
@@ -74,6 +73,9 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
     for h5_file in h5_files:
         file_path = os.path.join(intersection_folder_path, h5_file)
         ip = file_path.split('_')[-1][:-3]
+        offset = 0
+        if ip == '1.0.0.22' or ip == '1.0.0.24':
+            offset = 120
         fusion_inputs[ip] = []
         radar = radars[ip]
 
@@ -100,7 +102,7 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
         # h5 파일 열기
         with h5py.File(file_path, 'r') as h5_file_data:
             data_dict = h5_file_data
-            for scan_num in tqdm(range(max_scan_num)): 
+            for scan_num in tqdm(range(offset,max_scan_num + offset, 1)): 
                 scan_wise_fusion_inputs = []
                 for fobj in data_dict['SCAN_{:05d}'.format(scan_num)]['Object'][:]:
                     new_obj = Obj()
@@ -147,7 +149,74 @@ def input_processing(intersection_folder_path : str, radars : dict, landmark_pos
                     new_obj.vely   = vely
                     new_obj.width  = width
                     new_obj.length = length
+                    new_obj.associated_ip = ip
                     new_obj.heading_angle_deg = heading_angle_deg
                     scan_wise_fusion_inputs.append(new_obj)
                 fusion_inputs[ip].append(scan_wise_fusion_inputs)
+    return fusion_inputs
+
+
+def input_processing_temp(file_path : str, radars : dict, landmark_position : list):
+
+    fusion_inputs = {}
+
+    ip = '1.0.0.24'
+
+    fusion_inputs[ip] = []
+    radar = radars[ip]
+
+    radar_gps = radar.position
+    landmark_gps = landmark_position
+
+    x_distance, y_distance = calculate_xy_distance(landmark_gps, radar_gps)
+
+    radar_diff_x_meter = x_distance
+    radar_diff_y_meter = y_distance
+
+    theta = np.deg2rad(radar.deg + 90)
+    
+    transition_matrix_meter = np.array([[math.cos(theta), - math.sin(theta), radar_diff_x_meter],
+                                [math.sin(theta), math.cos(theta), radar_diff_y_meter],
+                                [0,0,1]])
+    
+
+    transition_matrix_vector = np.array([
+        [np.cos(theta), -np.sin(theta)],
+        [np.sin(theta), np.cos(theta)]
+    ])
+
+    with open(file_path, "r") as file:
+        data = file.read()
+    parsed_data = json.loads(data)
+
+    for scan in parsed_data.keys():
+        scan_wise_fusion_inputs = []
+        for serial_number in parsed_data[scan].keys():
+            for fobj in parsed_data[scan][serial_number]:
+                new_obj = Obj()
+                new_obj.info = ip
+                new_obj.id = fobj['id']
+                ## have to handle status
+                new_obj.status = fobj['state[0]']
+                new_obj.update_state = fobj['state[2]']
+                new_obj.move_state = fobj['state[3]']
+                posx = fobj['xpos']
+                posy = fobj['ypos']
+                heading_angle_deg = fobj['headang']
+                new_obj.width = fobj['width']
+                new_obj.length = fobj['lenght']
+
+                position = np.array([[posx],[posy],[1]]) 
+                position = np.dot(transition_matrix_meter,position)
+
+                posx = position[0][0]
+                posy = position[1][0]
+
+                heading_angle_deg += (np.rad2deg(theta))
+
+                new_obj.posx   = posx
+                new_obj.posy   = posy
+                new_obj.heading_angle_deg = heading_angle_deg
+                scan_wise_fusion_inputs.append(new_obj)
+        fusion_inputs[ip].append(scan_wise_fusion_inputs)
     return fusion_inputs

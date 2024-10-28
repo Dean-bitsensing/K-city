@@ -1,7 +1,7 @@
 # models/button_models.py
 from .camera_display_model import CameraDisplayModel
 from .window_model import WindowModel
-from.info_window_model import InfoWindowModel
+from .info_window_model import InfoWindowModel
 from .colors import *
 
 class CameraReturnButton(CameraDisplayModel):

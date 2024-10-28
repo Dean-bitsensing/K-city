@@ -7,6 +7,7 @@ from tqdm import tqdm
 from dataclasses import asdict
 from .fusion_data_classes import Obj, TObj
 from .fusion_input_processing import *
+from .fusion_output_processing import *
 
 ASSOCIATE_DISTANCE_GATE = 10
 ASSOCIATE_VELOCITY_GATE = 5
@@ -15,6 +16,7 @@ MERGE_DISTANCE_GATE = 10
 MEREGE_VELOCITY_GATE = 5
 
 MINMUM_MERGE_PROBOBILITY = 0.2
+
 class Fusion:
     def __init__(self):
         self.scan_wise_fusion_output = []  # can be iobj and kobj (flow: aobj -> tobj -> iobj -> tobj -> kobj)
@@ -62,14 +64,14 @@ class Fusion:
             if not tobj.info:
                 continue
             X = np.array([[tobj.posx], [tobj.posy], [tobj.velx], [tobj.vely]])
-            P = tobj.covariance  # covariance는 새로 할당되므로 deepcopy 필요 없음
+            P = tobj.covariance  
 
             X_pred = np.dot(self.system_matrix, X)
             X_pred = X_pred.astype(float)
             P_pred = np.dot(np.dot(self.system_matrix, P), np.transpose(self.system_matrix)) + self.Q
             posx_pred, posy_pred = X_pred[0, 0], X_pred[1, 0]
 
-            # posx, posy, covariance는 각각 새로운 값을 할당하므로 deepcopy 필요 없음
+            
             tobj.posx = posx_pred
             tobj.posy = posy_pred
             tobj.covariance = P_pred
@@ -120,6 +122,8 @@ class Fusion:
         self.update_age()
         self.update_state_by_age()
         self.update_heading_angle_deg(scan_num)
+        self.update_stationary()
+        self.update_associated_ip(scan_num)
 
     def fusion(self, scan_num):
         self.prediction()
@@ -130,14 +134,14 @@ class Fusion:
         self.put_fusion_ouput_to_fusion_outputs()
 
     def put_fusion_ouput_to_fusion_outputs(self):
-        # scan_wise_fusion_output이 저장될 때 원본이 수정되면 안 되므로 deepcopy 필요
+
         self.fusion_outputs.append(deepcopy(self.scan_wise_fusion_output))
+
 
     ### for association and update
     def find_obj_with_id(self, objs, id):
         for obj in objs:
             if obj.id == id:
-                # 원본 데이터가 수정되지 않고, 참조만 하기 때문에 deepcopy 불필요
                 return obj
 
     def possible_to_associate(self, tobj1, tobj2):
@@ -258,6 +262,23 @@ class Fusion:
 
                 tobj.heading_angle_deg = heading_angle_deg_sum/heading_angle_deg_num
 
+    def update_stationary(self):
+        for tobj in self.scan_wise_fusion_output:
+            if abs(tobj.velx) <= 0.3 and abs(tobj.vely) <= 0.3:
+                tobj.move_state = 2 #Stopped
+            else:
+                tobj.move_state = 1 # Moving
+
+    def update_associated_ip(self,scan_num):
+        for tobj in self.scan_wise_fusion_output:
+            if tobj.update_state == 0 or not tobj.associated_info:
+                continue
+            associated_ip = next(iter(tobj.associated_info))
+            associated_ip_idx = tobj.associated_info[associated_ip]
+            scan_wise_fusion_input = self.fusion_inputs[associated_ip][scan_num]
+            target_obj = self.find_obj_with_id(scan_wise_fusion_input,associated_ip_idx)
+            tobj.associated_ip  = target_obj.associated_ip
+            
 
 
 def fusion_main(config):
@@ -266,6 +287,7 @@ def fusion_main(config):
     verona = Fusion()
 
     folder_path, esterno_radars, interno_radars, landmark_position, max_scan_num = load_config(config)
+    verona_radars = esterno_radars | interno_radars
 
     while True:
 
@@ -289,4 +311,45 @@ def fusion_main(config):
         
         break
 
+    fusion_result = output_processing(verona.fusion_outputs, verona_radars, landmark_position)
+
+    print(fusion_result)
+
     return verona.fusion_outputs
+
+
+def fusion_main_temp(config):
+    esterno = Fusion()
+
+    fusion_result = []
+
+    folder_path, esterno_radars, interno_radars, landmark_position, max_scan_num = load_config(config)
+
+    esterno_fusion_inputs = input_processing_temp("C:/Users/Kenneth/Downloads/kcity_sample/2024-09-26_150000.txt", esterno_radars, landmark_position)
+
+    esterno.load_data(esterno_fusion_inputs, 'esterno')
+    
+    for scan_num in tqdm(range(200), desc = "intersection fusion tracking"):
+        esterno.fusion(scan_num)
+
+    fusion_result.extend(esterno.fusion_outputs)
+
+    esterno_fusion_inputs = input_processing_temp("C:/Users/Kenneth/Downloads/kcity_sample/2024-09-26_150010.txt", esterno_radars, landmark_position)
+
+    esterno.load_data(esterno_fusion_inputs, 'esterno')
+    
+    for scan_num in tqdm(range(200), desc = "intersection fusion tracking"):
+        esterno.fusion(scan_num)
+
+    fusion_result.extend(esterno.fusion_outputs)
+
+    esterno_fusion_inputs = input_processing_temp("C:/Users/Kenneth/Downloads/kcity_sample/2024-09-26_150020.txt", esterno_radars, landmark_position)
+
+    esterno.load_data(esterno_fusion_inputs, 'esterno')
+    
+    for scan_num in tqdm(range(200), desc = "intersection fusion tracking"):
+        esterno.fusion(scan_num)
+
+    fusion_result.extend(esterno.fusion_outputs)
+
+    return fusion_result

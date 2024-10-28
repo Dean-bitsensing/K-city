@@ -6,7 +6,8 @@ class Obj:
 ### Additional attributes which is not included in input and output
 
     info : str = '' # can be atm's ip or intersection name 
-    associated: bool = False # attributes for fusion association and management
+    associated : bool = False # attributes for fusion association and management
+    associated_ip : str = ''
 
 ### From below oriented from input
 
@@ -58,3 +59,4 @@ class TObj(Obj):
 
 
                                      
+ 

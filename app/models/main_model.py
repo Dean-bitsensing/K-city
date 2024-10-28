@@ -1,15 +1,10 @@
 import h5py
-from .colors import *
+from .design import *
 import os
 from pathlib import Path
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
-from .window_model import WindowModel
-from .map_grid_model import MapGridModel
-from .camera_display_model import CameraDisplayModel
-from .button_models import CameraReturnButton, CameraLeftButton, CameraRightButton, VDSDataButton, VDSNodeDataButton, SaveChangeButton, IDSDataButton
-from .info_window_model import InfoWindowModel
-from.data_models import *
+from .data import *
 from scipy.optimize import minimize
 from .fusion import *
 class MainModel:
@@ -55,6 +50,8 @@ class MainModel:
     def load_data(self, current_scan):
         for intersection in self.intersections:
             for atm in intersection.atms:
+                if atm.ip == '1.0.0.22' or atm.ip == '1.0.0.24':
+                    current_scan+=120
                 atm.get_scan_data(current_scan, self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
 
     def fusion(self):

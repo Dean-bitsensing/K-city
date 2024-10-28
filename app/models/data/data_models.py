@@ -1,15 +1,12 @@
 from .data_class_models import *
-from .colors import *
-from .loading import *
+from ..design.colors import *
+from ..loading import *
 import h5py, json
 import numpy as np
 import math
 import os
 import pygame
-import sys
-import requests
-from io import BytesIO
-from PIL import Image
+
 
 ######## Data Models ########
 
@@ -288,8 +285,11 @@ class RadarZone:
 class ScanData(Atm):
     def __init__(self,current_scan, atm):
         self.atm = atm
-        self.current_scan = current_scan
         self.logging_data = self.atm.logging_data
+        offset = 0
+        if self.atm.ip == '1.0.0.22' or self.atm.ip == '1.0.0.24':
+            offset = 120
+        self.current_scan = current_scan + offset
         self.current_scan_data = self.logging_data['SCAN_{:05d}'.format(current_scan)]
         self.atm_lat = self.atm.atm_lat
         self.atm_long = self.atm.atm_long

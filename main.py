@@ -57,7 +57,6 @@ def run_pygame(config):
     viewer.current_scan = model.min_scan
     viewer.before_scan = viewer.current_scan
 
-    print(model.max_scan)
 
     kcity_fusion_objs = model.fusion()
 
@@ -89,11 +88,58 @@ def run_pygame(config):
 
     os._exit(0)
 
+def run_accumulate_mode(config):
+    model = MainModel(config['verona'])
+    pygame.init()
+    screen = pygame.display.set_mode((model.window_model.WINDOW_WIDTH, model.window_model.WINDOW_LENGTH),pygame.RESIZABLE | pygame.SRCALPHA)
+    pygame.display.set_caption('K-City develop tool')
+    viewer = MainViewer(model, screen)
+    model.get_logging_data()
+    model.set_min_max_scan()
+    model.load_data(viewer.current_scan)
+
+    screen.fill((0, 0, 0))
+    viewer.draw_screen_in_accumulate_mode()
+
+    # Controller
+    event_controller = MainController(model, viewer)
+ 
+    clock = pygame.time.Clock()
+    viewer.current_scan = model.min_scan
+    viewer.before_scan = viewer.current_scan
+
+    
+    while viewer.running:
+        if viewer.current_scan != viewer.before_scan:
+            viewer.before_scan = viewer.current_scan
+            model.load_data(viewer.current_scan)
+        viewer.draw_obj_in_accumulate_mode()
+
+        # pygame.display.flip() # 화면 업데이트                                                
+        pygame.display.update()
+        clock.tick(config['fps']) 
+
+        if not viewer.paused:
+            viewer.current_scan += 1
+
+        for event in pygame.event.get():
+            event_controller.handle_event(event)
+
+        if viewer.current_scan >= model.max_scan:
+            viewer.paused = True
+            viewer.current_scan = model.max_scan-1
+        if viewer.current_scan <= model.min_scan:
+            viewer.paused = True
+            viewer.current_scan = model.min_scan+1
 
 
 def main(config):
-    pygame_thread = threading.Thread(target=run_pygame, args=(config,))
-    pygame_thread.start()
+    if config['accumulate_mode']:
+        pygame_thread = threading.Thread(target= run_accumulate_mode, args=(config,))
+        pygame_thread.start()
+    else:
+        pygame_thread = threading.Thread(target=run_pygame, args=(config,))
+        pygame_thread.start()
 
 if __name__ == "__main__":
     get_scan_num()

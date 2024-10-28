@@ -2,6 +2,23 @@ import pygame
 import math
 import numpy as np
 
+BLUE =          (0,   0,   255)
+RED =           (255, 0,   0)
+GREEN =         (0,   255, 0)
+WHITE =         (255, 255, 255)
+GRAY =          (128, 128, 128)
+BLACK =         (0,   0,   0)
+YELLOW =        (255, 204, 0)
+BRIGHT_GRAY =   (226, 226, 226)
+DARK_GRAY =     (98,  98,  98)
+PINK =          (0xFF,0xC0,0xCB)
+INDIGO =        (0x4B,0x00,0x82)
+AQUAMARINE =    (0x7F,0xFF,0xD4)
+SKYBLUE =       (0x87,0xCE,0xEB)
+
+
+
+
 class MainViewer:
     def __init__(self, model, screen):
         self.model = model
@@ -12,6 +29,8 @@ class MainViewer:
         self.delete_mode = False
         self.fusion_only_mode = True
         self.radar_zone_view = False
+        self.accumulate_mode = True
+        self.accumulate_initial_mode = True
         self.current_scan = 0
         self.before_scan = 0
         self.class_init()
@@ -36,8 +55,34 @@ class MainViewer:
 
     def window_resize(self):
         self.class_init()
+
+    def draw_screen_in_accumulate_mode(self):
+        self.background_image.draw_background_image()
+        
+    def draw_obj_in_accumulate_mode(self):
+        self.radar_postions.draw_radar_positions()
+        self.track_view.draw_fobj_center()
+        self.model.cam_bound_model.cam_list_load(self.model.intersections)
+        self.model.cam_bound_model.render_cams(self.screen, self.model.intersections)
         
 
+        self.cam_left_button.draw_vision_next_list_button()
+        self.cam_right_button.draw_vision_next_list_button()
+
+        if self.model.cam_bound_model.is_zoom():
+            self.cam_return_button.draw_return_button()
+        
+        self.vds_data_button.draw_return_button()
+        self.vds_node_data_button.draw_return_button()
+        self.ids_data_button.draw_return_button()
+        self.save_change_button.draw_return_button()
+        self.data_info_window.draw_data_info_window()
+        self.data_info_window.draw_selected_atms_in_info_model(self.model.intersections)
+        self.data_info_window.draw_scan_info(self.current_scan)
+
+        if self.delete_mode:
+            self.data_info_window.draw_delete_info()
+        
     def draw(self):      
         self.background_image.draw_background_image()
         # self.grid.draw_grid()
@@ -264,7 +309,25 @@ class TrackView:
             if kobj.update_state < 2:
                 continue
 
-            self.draw_single_obj(kobj)
+
+            # if kobj.move_state == 1:
+            if kobj.associated_ip == '1.0.0.12':
+                self.draw_single_obj(kobj, INDIGO)
+            elif kobj.associated_ip == '1.0.0.20':
+                self.draw_single_obj(kobj, RED)
+            elif kobj.associated_ip == '1.0.0.21':
+                self.draw_single_obj(kobj, YELLOW)
+            elif kobj.associated_ip == '1.0.0.22':
+                self.draw_single_obj(kobj, BLUE)
+            elif kobj.associated_ip == '1.0.0.24':
+                self.draw_single_obj(kobj, SKYBLUE)
+            elif kobj.associated_ip == '1.0.0.25':
+                self.draw_single_obj(kobj, PINK)
+            else:
+                print(kobj.associated_ip)
+                self.draw_single_obj(kobj,(255,255,255))
+            # else:
+            #     self.draw_single_obj(kobj,(120,120,120))
 
     def draw_fobj(self):
         for intersection in self.model.intersections:
@@ -273,30 +336,39 @@ class TrackView:
                     continue
                 for fobj in atm.current_scan_data.fusion_object_data:
                     self.draw_single_obj(fobj, atm.color)
+
+    def draw_fobj_center(self):
+        for intersection in self.model.intersections:
+            for atm in intersection.atms:
+                if not atm.view:
+                    continue
+                for fobj in atm.current_scan_data.fusion_object_data:
+                    self.draw_single_obj_center(fobj, atm.color)
     
 
     def meters_to_pixels(self, meters, lat, zoom, map_size, window_size):
-
-        # 지구의 둘레 (Equatorial Circumference) = 40,075km
+        # 지구 반지름 (6378137미터)
         EARTH_RADIUS = 6378137  # meters
 
         # 위도를 라디안으로 변환
         lat_rad = math.radians(lat)
 
-        # 지도 상에서 한 픽셀당 미터를 계산 (줌 레벨과 위도에 따라 다름)
+        # 줌 레벨과 위도에 따른 픽셀당 미터 계산
         meters_per_pixel = (math.cos(lat_rad) * 2 * math.pi * EARTH_RADIUS) / (2 ** zoom * 256)
 
-        # 주어진 미터를 원본 지도 상의 픽셀로 변환
-        pixels = meters / meters_per_pixel
+        # meters가 [x, y] 형태의 배열이라 가정하고 각각의 미터를 픽셀로 변환
+        pixels_x = meters[0] / meters_per_pixel  # x 방향
+        pixels_y = meters[1] / meters_per_pixel  # y 방향
 
-        # 창 크기 대비 지도 크기에 따른 비율로 스케일링
+        # 지도 크기와 창 크기에 따른 스케일 계산 (가로와 세로 각각)
         scale_x = window_size[0] / map_size[0]
         scale_y = window_size[1] / map_size[1]
 
-        # 창에서의 픽셀 크기로 변환
-        pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
+        # 창 크기에 맞게 스케일 적용
+        pixels_x_on_window = pixels_x * scale_x
+        pixels_y_on_window = pixels_y * scale_y
 
-        return pixels_on_window
+        return [pixels_x_on_window, pixels_y_on_window] # (x, y) 좌표 반환
     
     def rotate_point(self, x, y, angle, origin_x, origin_y):
         """ (x, y)를 중심(origin_x, origin_y) 기준으로 angle 만큼 회전시킨 좌표를 반환 """
@@ -318,7 +390,7 @@ class TrackView:
 
         return [final_x, final_y]    
     
-    def draw_single_obj(self, obj, color = (255,255,255)):
+    def draw_single_obj(self, obj, color = (255,200,200)):
         font = pygame.font.Font(None, 20)  
 
         posx =  obj.posx 
@@ -335,9 +407,19 @@ class TrackView:
         pygame.draw.circle(self.screen, color, (posx_pixel, posy_pixel), 2, 0)
         pygame.draw.polygon(self.screen, color, polygon_pos, 2)
 
+    def draw_single_obj_center(self, obj, color = (255,200,200)):
+        font = pygame.font.Font(None, 20)  
+
+        posx =  obj.posx 
+        posy =  - obj.posy 
+
+        posx_pixel, posy_pixel = self.get_pixel_position(posx, posy)
+
+
+        pygame.draw.circle(self.screen, color, (posx_pixel, posy_pixel), 1, 0)
+
     def get_pixel_position(self, posx, posy):
-        posx_pixel = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-        posy_pixel = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+        posx_pixel,posy_pixel = self.meters_to_pixels([posx,posy], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
         posx_pixel += self.center_x
         posy_pixel += self.center_y
@@ -356,24 +438,20 @@ class TrackView:
         dl_pos = self.rotate_point(*dl_pos, heading_angle_deg, posx, posy)
         dr_pos = self.rotate_point(*dr_pos, heading_angle_deg, posx, posy)
 
-        ul_pos[0] = self.meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ul_pos = self.meters_to_pixels(ul_pos, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         ul_pos[0] += self.center_x
-        ul_pos[1] = self.meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         ul_pos[1] += self.center_y
 
-        ur_pos[0] = self.meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ur_pos = self.meters_to_pixels(ur_pos, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         ur_pos[0] += self.center_x
-        ur_pos[1] = self.meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         ur_pos[1] += self.center_y
 
-        dl_pos[0] = self.meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dl_pos = self.meters_to_pixels(dl_pos, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         dl_pos[0] += self.center_x
-        dl_pos[1] = self.meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         dl_pos[1] += self.center_y
 
-        dr_pos[0] = self.meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dr_pos = self.meters_to_pixels(dr_pos, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         dr_pos[0] += self.center_x
-        dr_pos[1] = self.meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         dr_pos[1] += self.center_y
 
         return [ dl_pos, ul_pos, ur_pos, dr_pos ] 
@@ -482,28 +560,29 @@ class MultipleRadarPositionView:
                     
 
     def meters_to_pixels(self, meters, lat, zoom, map_size, window_size):
-
-        # 지구의 둘레 (Equatorial Circumference) = 40,075km
+        # 지구 반지름 (6378137미터)
         EARTH_RADIUS = 6378137  # meters
 
         # 위도를 라디안으로 변환
         lat_rad = math.radians(lat)
 
-        # 지도 상에서 한 픽셀당 미터를 계산 (줌 레벨과 위도에 따라 다름)
+        # 줌 레벨과 위도에 따른 픽셀당 미터 계산
         meters_per_pixel = (math.cos(lat_rad) * 2 * math.pi * EARTH_RADIUS) / (2 ** zoom * 256)
 
-        # 주어진 미터를 원본 지도 상의 픽셀로 변환
-        pixels = meters / meters_per_pixel
+        # meters가 [x, y] 형태의 배열이라 가정하고 각각의 미터를 픽셀로 변환
+        pixels_x = meters[0] / meters_per_pixel  # x 방향
+        pixels_y = meters[1] / meters_per_pixel  # y 방향
 
-        # 창 크기 대비 지도 크기에 따른 비율로 스케일링
+        # 지도 크기와 창 크기에 따른 스케일 계산 (가로와 세로 각각)
         scale_x = window_size[0] / map_size[0]
         scale_y = window_size[1] / map_size[1]
 
-        # 창에서의 픽셀 크기로 변환
-        pixels_on_window = pixels * (scale_x + scale_y) / 2  # 가로 세로 비율의 평균 사용
+        # 창 크기에 맞게 스케일 적용
+        pixels_x_on_window = pixels_x * scale_x
+        pixels_y_on_window = pixels_y * scale_y
 
-        return pixels_on_window
-    
+        return [pixels_x_on_window, pixels_y_on_window]  # (x, y) 좌표 반환
+        
     def rotate_point(self, x, y, angle, origin_x, origin_y):
         """ (x, y)를 중심(origin_x, origin_y) 기준으로 angle 만큼 회전시킨 좌표를 반환 """
         radians = math.radians(-angle)
@@ -547,8 +626,7 @@ class MultipleRadarPositionView:
         pygame.draw.polygon(self.screen, color, polygon_pos, 2)
 
     def get_pixel_position(self, posx, posy):
-        posx_pixel = self.meters_to_pixels(posx, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
-        posy_pixel = self.meters_to_pixels(posy, self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
+        posx_pixel,posy_pixel = self.meters_to_pixels([posx,posy], self.landmark[0], 18, (640, 640), (self.center_x*2, self.center_y*2))
 
         posx_pixel += self.center_x
         posy_pixel += self.center_y
@@ -567,24 +645,20 @@ class MultipleRadarPositionView:
         dl_pos = self.rotate_point(*dl_pos, heading_angle_deg, posx, posy)
         dr_pos = self.rotate_point(*dr_pos, heading_angle_deg, posx, posy)
 
-        ul_pos[0] = self.meters_to_pixels(ul_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ul_pos = self.meters_to_pixels(ul_pos, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         ul_pos[0] += self.center_x
-        ul_pos[1] = self.meters_to_pixels(ul_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         ul_pos[1] += self.center_y
 
-        ur_pos[0] = self.meters_to_pixels(ur_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        ur_pos = self.meters_to_pixels(ur_pos, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         ur_pos[0] += self.center_x
-        ur_pos[1] = self.meters_to_pixels(ur_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         ur_pos[1] += self.center_y
 
-        dl_pos[0] = self.meters_to_pixels(dl_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dl_pos = self.meters_to_pixels(dl_pos, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         dl_pos[0] += self.center_x
-        dl_pos[1] = self.meters_to_pixels(dl_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         dl_pos[1] += self.center_y
 
-        dr_pos[0] = self.meters_to_pixels(dr_pos[0], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
+        dr_pos = self.meters_to_pixels(dr_pos, self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         dr_pos[0] += self.center_x
-        dr_pos[1] = self.meters_to_pixels(dr_pos[1], self.landmark[0], self.landmark[2], (640, 640), (self.center_x*2, self.center_y*2))
         dr_pos[1] += self.center_y
 
         return [ dl_pos, ul_pos, ur_pos, dr_pos ] 
@@ -636,4 +710,6 @@ class DataInfoWindowView:
                         text_surface = font.render(atm.ip, True, self.model.base_font_color)   
                     self.screen.blit(text_surface, (self.model.posx + self.model.offset, self.model.posy + y_offset))
                     y_offset +=self.model.offset
-
+    
+    def draw_info_if_selected(self, mouse_pos):
+        pass
