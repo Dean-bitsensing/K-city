@@ -1,18 +1,19 @@
+accumulate_mode: 0
 api_key: AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw
 fps: 15
 verona:
   esterno:
-    atm_num: 6  # Changed from atm_nun
-    folder_path: "C:\\kcity_loggingdata\\datas\\esterno"  # Escaped backslashes
+    atm_num: 6
+    folder_path: D:\kcity_loggingdata\datas\esterno
     intersection_center_gps:
     - 45.4305233
     - 10.9877399
     intersection_idx: 2
     intersection_map_zoom: 19
-    metadata_path: "C:\\kcity_loggingdata\\metadata_logging"  # Escaped backslashes
+    metadata_path: D:\kcity_loggingdata\metadata_logging
     radar_azi_angle_1.0.0.20: 9
     radar_azi_angle_1.0.0.21: 18
-    radar_azi_angle_1.0.0.22: 67
+    radar_azi_angle_1.0.0.22: 79
     radar_azi_angle_1.0.0.23: 0
     radar_azi_angle_1.0.0.24: 246.71
     radar_azi_angle_1.0.0.25: -27.1
@@ -23,7 +24,7 @@ verona:
     - 45.430227500000164
     - 10.987823700000048
     radar_gps_1.0.0.22:
-    - 45.430359
+    - 45.43041999999985
     - 10.9882485
     radar_gps_1.0.0.23:
     - 45.430319
@@ -36,20 +37,21 @@ verona:
     - 10.9879317
   info:
     API_KEY: AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw
+    MAX_SCAN: 50
     UTM_zone_32N: epsg:32652
     WGS84: epsg:4326
     atm_num: 10
     center_gps:
     - 45.4310364
     - 10.988078
-    data_path: 'C:\\kcity_loggingdata\\data'  # Escaped backslashes
-    h5_data_path: 'C:\\kcity_loggingdata\\datas'  # Escaped backslashes
+    data_path: D:\\kcity_loggingdata
+    h5_data_path: D:\\kcity_loggingdata\\datas
     intersection_num: 2
     map_zoom: 18
     node:
       esterno:
         node0:
-          oncoming: 
+          oncoming:
           - 1.0.0.21
           - 1.0.0.20
           outgoing: 1.0.0.25
@@ -64,26 +66,26 @@ verona:
           outgoing: 1.0.0.24
       interno:
         node0:
-          oncoming: 0
-          outgoing: 0
+          oncoming: 1.0.0.10
+          outgoing: 1.0.0.10
         node1:
-          oncoming: 0
-          outgoing: 0
+          oncoming: 1.0.0.11
+          outgoing: 1.0.0.11
         node2:
-          oncoming: 0
-          outgoing: 0
-        node3:
           oncoming: 1.0.0.12
           outgoing: 0
+        node3:
+          oncoming: 1.0.0.13
+          outgoing: 1.0.0.13
   interno:
-    atm_num: 4  # Changed from atm_nun
-    folder_path: "C:\\kcity_loggingdata\\datas\\interno"  # Escaped backslashes
+    atm_num: 4
+    folder_path: D:\kcity_loggingdata\datas\interno
     intersection_center_gps:
     - 45.4316523
     - 10.988251
     intersection_idx: 1
     intersection_map_zoom: 19
-    metadata_path: "C:\\kcity_loggingdata\\metadata_logging"  # Escaped backslashes
+    metadata_path: D:\kcity_loggingdata\metadata_logging
     radar_azi_angle_1.0.0.10: 0
     radar_azi_angle_1.0.0.11: 0
     radar_azi_angle_1.0.0.12: 157.36

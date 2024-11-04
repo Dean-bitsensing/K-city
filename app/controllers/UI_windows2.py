@@ -299,61 +299,59 @@ class NodePlotApp:
 
 
     def plot_lane_data(self, lane_data, direction, ax, title, hour_bins, x_ticks, dataset_name):
-        total_counts = pd.Series(0, index=hour_bins)  # Initialize total counts for this graph
+        total_counts = pd.Series(0, index=hour_bins)  # 총 카운트 초기화
 
+        # 각 차로에 대해 데이터를 플롯하고 총합을 계산
         for (lane, lane_direction), is_active in self.active_lanes.items():
             if lane_direction == direction and is_active:
                 key = (str(lane), direction)
                 if key in lane_data:
                     lane_df = lane_data[key]
 
-                    # 주말과 주중에 대해 일수를 다르게 처리 (weekday와 weekend에 따라)
-                    if dataset_name == 'weekday':
-                        num_days = self.num_weekday_days
-                    else:
-                        num_days = self.num_weekend_days
+                    num_days = self.num_weekday_days if dataset_name == 'weekday' else self.num_weekend_days
 
-                    # 시간대별로 그룹화된 데이터를 처리할 때, 각 hour_bin별로 유효한 일수를 세고 평균 계산
+                    # 시간대별로 평균 계산
                     counts_per_hour = []
                     for hour_bin in hour_bins:
-                        hourly_data = lane_df[lane_df['hour_bin'] == hour_bin]  # 해당 시간대 데이터
-
-                        # 해당 시간대의 고유한 날짜를 추출
+                        hourly_data = lane_df[lane_df['hour_bin'] == hour_bin]
                         unique_dates = hourly_data['time'].dt.date.unique()
-                        valid_dates_count = 0  # 유효한 데이터가 있는 날짜의 수
-                        total_count = 0  # 총 count 값
 
-                        # 각 날짜에 대해 데이터가 있는지 확인하고 평균 계산
+                        valid_dates_count = 0
+                        total_count = 0
+
                         for date in unique_dates:
                             date_data = hourly_data[hourly_data['time'].dt.date == date]
                             if not date_data.empty:
-                                valid_dates_count += 1  # 유효한 데이터가 있는 날짜만 셈
-                                total_count += date_data['count'].sum()  # count 합계
+                                valid_dates_count += 1
+                                total_count += date_data['count'].sum()
 
-                        # 유효한 날짜 수로 나눠서 평균을 구함 (날짜가 없다면 0으로 설정)
                         avg_count = total_count / valid_dates_count if valid_dates_count > 0 else 0
                         counts_per_hour.append(avg_count)
 
-                    # hour_bins에 맞춰 평균 값을 시리즈로 변환
                     counts = pd.Series(counts_per_hour, index=hour_bins)
 
-                    # Plot the lane-specific data
+                    # 차로별 데이터 플로팅
                     ax.plot(counts.index, counts, label=f'{direction.capitalize()} (Lane {lane})')
-
-                    # Add the lane data to the total counts
                     total_counts = total_counts.add(counts, fill_value=0)
 
-        # Plot the dynamically computed total data for this graph
+        # 총합 데이터 플로팅 (빨간색 실선)
         ax.plot(total_counts.index, total_counts, color='red', label='Total (Average)', linestyle='--')
 
+        # 그래프 타이틀 및 레이블 설정
         start_date, end_date = self.date_range
         ax.set_title(f'{title} Vehicles by Hour\n({start_date} to {end_date})')
         ax.set_xlabel('Time of Day (TOD)')
         ax.set_ylabel('Average Number of Vehicles')
         ax.grid(True)
-        ax.set_xticks(hour_bins)
-        ax.set_xticklabels(x_ticks, rotation=45)
+
+        # x축을 정확히 0~23으로 제한 (24가 포함되지 않도록)
+        ax.set_xlim(0, 23)  # 0부터 23까지만 표시
+        ax.set_xticks(hour_bins)  # 각 시간에 틱 설정
+        ax.set_xticklabels(x_ticks, rotation=45)  # 레이블 회전
+
         ax.legend()
+
+
 
 
 

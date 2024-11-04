@@ -311,21 +311,21 @@ class TrackView:
 
 
             # if kobj.move_state == 1:
-            if kobj.associated_ip == '1.0.0.12':
-                self.draw_single_obj(kobj, INDIGO)
-            elif kobj.associated_ip == '1.0.0.20':
-                self.draw_single_obj(kobj, RED)
-            elif kobj.associated_ip == '1.0.0.21':
-                self.draw_single_obj(kobj, YELLOW)
-            elif kobj.associated_ip == '1.0.0.22':
-                self.draw_single_obj(kobj, BLUE)
-            elif kobj.associated_ip == '1.0.0.24':
-                self.draw_single_obj(kobj, SKYBLUE)
-            elif kobj.associated_ip == '1.0.0.25':
-                self.draw_single_obj(kobj, PINK)
-            else:
-                print(kobj.associated_ip)
-                self.draw_single_obj(kobj,(255,255,255))
+            # if kobj.associated_ip == '1.0.0.12':
+            #     self.draw_single_obj(kobj, INDIGO)
+            # elif kobj.associated_ip == '1.0.0.20':
+            #     self.draw_single_obj(kobj, RED)
+            # elif kobj.associated_ip == '1.0.0.21':
+            #     self.draw_single_obj(kobj, YELLOW)
+            # elif kobj.associated_ip == '1.0.0.22':
+            #     self.draw_single_obj(kobj, BLUE)
+            # elif kobj.associated_ip == '1.0.0.24':
+            #     self.draw_single_obj(kobj, SKYBLUE)
+            # elif kobj.associated_ip == '1.0.0.25':
+            #     self.draw_single_obj(kobj, PINK)
+            # else:
+            #     print(kobj.associated_ip)
+            self.draw_single_obj(kobj,(255,255,0))
             # else:
             #     self.draw_single_obj(kobj,(120,120,120))
 
@@ -395,14 +395,19 @@ class TrackView:
 
         posx =  obj.posx 
         posy =  - obj.posy 
+        velx = obj.velx
+        vely = obj.vely
+        move_state = obj.move_state
         width = obj.width 
         length = obj.length 
         heading_angle_deg = obj.heading_angle_deg
-
+            
         polygon_pos = self.get_polygon_pos(posx, posy, width, length, heading_angle_deg)   
 
         posx_pixel, posy_pixel = self.get_pixel_position(posx, posy)
 
+        # if move_state == 2:
+        #     pygame.draw.circle(self.screen, (200,200,200), (posx_pixel, posy_pixel), 10, 0)
 
         pygame.draw.circle(self.screen, color, (posx_pixel, posy_pixel), 2, 0)
         pygame.draw.polygon(self.screen, color, polygon_pos, 2)

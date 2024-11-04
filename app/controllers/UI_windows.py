@@ -161,26 +161,36 @@ class PlotAppThread(threading.Thread):
         self.update_graphs()
 
     def update_graphs(self):
+        total_max_y_value = 1000  # Y축 최대값 기본 설정
+
+        # Y축 눈금 간격 설정 (최대값의 10%로)
+        grid_interval = total_max_y_value // 10
+
+        # 0시부터 23시까지의 시간대를 정의
+        hour_bins = range(24)  # 0 ~ 23 시간대
+        x_ticks = [f"{i:02d}:00" for i in hour_bins]  # "00:00", "01:00", ..., "23:00" 형식의 레이블
+
+        # 모든 서브플롯에 동일한 x축과 y축 설정을 적용
         for ax in self.axs:
-            ax.clear()
+            ax.set_xlim(0, 23)  # x축 범위를 0 ~ 23으로 고정
+            ax.set_xticks(hour_bins)  # 매 시간마다 틱 표시
+            ax.set_xticklabels(x_ticks, rotation=45)  # 레이블을 회전시켜 표시
 
-        hour_bins = range(24)
-        x_ticks = [f"{i:02d}:00" for i in range(24)]
+            # y축 설정 및 그리드 추가
+            ax.set_ylim(0, total_max_y_value)  # y축 최대값 설정
+            ax.set_yticks(range(0, total_max_y_value + grid_interval, grid_interval))  # y축 틱 설정
+            ax.grid(True)  # 그리드 활성화
 
-        # Plot weekend oncoming data
-        self.plot_lane_data(self.lane_data['weekend'], 'oncoming', self.axs[0], 'Weekend Oncoming', hour_bins, x_ticks)
+        # 각 그래프에 데이터를 그리기
+        self.plot_lane_data(self.lane_data['weekday'], 'oncoming', self.axs[0], 'Weekday Oncoming', hour_bins, x_ticks, 'weekday')
+        self.plot_lane_data(self.lane_data['weekday'], 'outgoing', self.axs[1], 'Weekday Outgoing', hour_bins, x_ticks, 'weekday')
+        self.plot_lane_data(self.lane_data['weekend'], 'oncoming', self.axs[2], 'Weekend Oncoming', hour_bins, x_ticks, 'weekend')
+        self.plot_lane_data(self.lane_data['weekend'], 'outgoing', self.axs[3], 'Weekend Outgoing', hour_bins, x_ticks, 'weekend')
 
-        # Plot weekend outgoing data
-        self.plot_lane_data(self.lane_data['weekend'], 'outgoing', self.axs[1], 'Weekend Outgoing', hour_bins, x_ticks)
-
-        # Plot weekday oncoming data
-        self.plot_lane_data(self.lane_data['weekday'], 'oncoming', self.axs[2], 'Weekday Oncoming', hour_bins, x_ticks)
-
-        # Plot weekday outgoing data
-        self.plot_lane_data(self.lane_data['weekday'], 'outgoing', self.axs[3], 'Weekday Outgoing', hour_bins, x_ticks)
-
+        # 레이아웃 조정 및 그래프 갱신
         plt.tight_layout()
         self.fig.canvas.draw()
+
 
     def plot_lane_data(self, lane_data, direction, ax, title, hour_bins, x_ticks):
         total_data = pd.Series(0, index=hour_bins)

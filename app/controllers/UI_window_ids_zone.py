@@ -161,7 +161,7 @@ def plot_app_thread(df, zone_ids, event_types, intersection, start_date, days):
 
 # Function to handle input and run the application
 def main_app(root):
-    data_path = "C:/kcity_loggingdata"
+    data_path = "D:/kcity_loggingdata"
     ips = ['1.0.0.20','1.0.0.21','1.0.0.22','1.0.0.23', '1.0.0.24', '1.0.0.25']
 
     # Select intersections, date, days, zone IDs, and event types

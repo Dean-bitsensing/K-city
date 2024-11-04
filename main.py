@@ -17,7 +17,6 @@ def write_max_scan_num_to_config(config, max_scan_num):
     
     # max_scan_num 값을 config에 추가 또는 업데이트
     config['verona']['info']['MAX_SCAN'] = max_scan_num
-    
     # 수정된 config를 다시 파일에 쓰기
     with open('config.yaml', 'w') as file:
         yaml.dump(config, file)
@@ -142,6 +141,6 @@ def main(config):
         pygame_thread.start()
 
 if __name__ == "__main__":
-    get_scan_num()
+    #get_scan_num()
     config = load_config()
     main(config)
