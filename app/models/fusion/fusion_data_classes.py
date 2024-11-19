@@ -51,6 +51,9 @@ class Obj:
 @dataclass
 class TObj(Obj):
     deletion_age : int = 0
+    grid_row : int = 0 
+    grid_col : int = 0
+    merged : bool = False
     associated_info: dict = field(default_factory=dict)  # mutable 기본값은 default_factory로 설정
     covariance: list = field(default_factory=lambda: np.array([[16, 0, 0, 0],
                                                                [0, 16, 0, 0],

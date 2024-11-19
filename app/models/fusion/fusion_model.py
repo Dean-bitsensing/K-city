@@ -1,6 +1,3 @@
-import os
-import h5py
-import math
 import numpy as np
 from copy import deepcopy
 from tqdm import tqdm
@@ -16,6 +13,11 @@ MERGE_DISTANCE_GATE = 10
 MEREGE_VELOCITY_GATE = 5
 
 MINMUM_MERGE_PROBOBILITY = 0.2
+
+MAXIMUM_FUSION_RANGE = 400
+GRID_SIZE = 10
+
+MAXIMUM_GRID_MAP_SIZE = MAXIMUM_FUSION_RANGE // GRID_SIZE
 
 class Fusion:
     def __init__(self):
@@ -36,7 +38,14 @@ class Fusion:
                            [0, 0.1, 0, 0],
                            [0, 0, 0.1, 0],
                            [0, 0, 0, 0.1]])
+        
+        self.grid_map = [[[]for _ in range(MAXIMUM_GRID_MAP_SIZE)] for _ in range(MAXIMUM_GRID_MAP_SIZE)]
+        self.center_gird = (MAXIMUM_GRID_MAP_SIZE//2, MAXIMUM_GRID_MAP_SIZE//2)
 
+        #including direction of x and y(urdl) and steady at last 
+        self.dx = [-1,-1,-1,0,0,0,1,1,1]
+        self.dy = [-1,0,1,-1,0,1,-1,0,1]
+        
     def load_intersection_data(self, fusion_inputs):
         # deepcopy는 필요하지 않음, 수정하지 않고 값을 참조만 하기 때문에 얕은 복사 가능
         self.fusion_inputs = fusion_inputs  
@@ -118,7 +127,10 @@ class Fusion:
         self.check_to_delete()
         self.delete_obj()
         self.generate_new_fusion_obj(scan_num)
-        self.merge_fusion_obj()
+        self.create_grid_map()
+        self.merge_fusion_obj_by_grid()
+        self.reset_fusion_obj_merge_flag()
+        self.reset_grid_map()
         self.update_age()
         self.update_state_by_age()
         self.update_heading_angle_deg(scan_num)
@@ -136,7 +148,7 @@ class Fusion:
     def put_fusion_ouput_to_fusion_outputs(self):
 
         self.fusion_outputs.append(deepcopy(self.scan_wise_fusion_output))
-
+ 
 
     ### for association and update
     def find_obj_with_id(self, objs, id):
@@ -185,6 +197,61 @@ class Fusion:
                     else:
                         new_tobj.id = empty_index
                         self.scan_wise_fusion_output[empty_index] = new_tobj
+
+    def create_grid_map(self):
+        for tobj in self.scan_wise_fusion_output:
+            if not tobj.associated_ip:
+                continue
+            posx = tobj.posx
+            posy = tobj.posy
+            id = tobj.id
+
+            x_sign = 1
+            y_sign = 1
+            if posx < 0:
+                x_sign = -1
+            if posy < 0:
+                y_sign = -1
+
+            col = int(x_sign * (abs(posx)//GRID_SIZE) + self.center_gird[1])
+            row = int(self.center_gird[0] - y_sign * (abs(posy)//GRID_SIZE))
+
+            if 0 <= row < MAXIMUM_GRID_MAP_SIZE and 0 <= col < MAXIMUM_GRID_MAP_SIZE:
+                tobj.grid_row, tobj.grid_col = row, col
+                self.grid_map[row][col].append(id)
+
+        
+
+    def merge_fusion_obj_by_grid(self):
+        merge_infos = []
+        for tobj in self.scan_wise_fusion_output:
+            id = tobj.id
+            if tobj.merged:
+                continue
+            tobj.merged = True
+            merge_info = [id]
+            x , y = tobj.grid_row, tobj.grid_col
+            for i in range(9):
+                nx = x + self.dx[i]
+                ny = y+ self.dy[i]
+                if 0 <= nx < MAXIMUM_GRID_MAP_SIZE and 0 <= ny < MAXIMUM_GRID_MAP_SIZE:
+                    for nid in self.grid_map[nx][ny]:
+                        ntobj = self.scan_wise_fusion_output[nid]
+                        if not ntobj.merged and self.possible_to_merge(tobj, ntobj):
+                            ntobj.merged = True
+                            merge_info.append(nid)
+            merge_infos.append(merge_info)
+        self.merge(merge_infos)
+
+    def reset_fusion_obj_merge_flag(self):
+        for tobj in self.scan_wise_fusion_output:
+            if tobj.merged:
+                tobj.merged = False
+
+    def reset_grid_map(self):
+        self.grid_map = [[[]for _ in range(MAXIMUM_GRID_MAP_SIZE)] for _ in range(MAXIMUM_GRID_MAP_SIZE)]
+
+
 
     def merge_fusion_obj(self):
         merge_infos = []
@@ -279,6 +346,12 @@ class Fusion:
             target_obj = self.find_obj_with_id(scan_wise_fusion_input,associated_ip_idx)
             tobj.associated_ip  = target_obj.associated_ip
             
+    def update_fusion_type(self):
+        for tobj in self.scan_wise_fusion_output:
+            if len(tobj.associated_info)>=2:
+                tobj.fusion_type = 2
+            elif len(tobj.associated_info) == 1:
+                tobj.fusion_type = 1 
 
 
 def fusion_main(config):

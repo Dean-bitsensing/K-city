@@ -310,24 +310,24 @@ class TrackView:
                 continue
 
 
-            # if kobj.move_state == 1:
-            # if kobj.associated_ip == '1.0.0.12':
-            #     self.draw_single_obj(kobj, INDIGO)
-            # elif kobj.associated_ip == '1.0.0.20':
-            #     self.draw_single_obj(kobj, RED)
-            # elif kobj.associated_ip == '1.0.0.21':
-            #     self.draw_single_obj(kobj, YELLOW)
-            # elif kobj.associated_ip == '1.0.0.22':
-            #     self.draw_single_obj(kobj, BLUE)
-            # elif kobj.associated_ip == '1.0.0.24':
-            #     self.draw_single_obj(kobj, SKYBLUE)
-            # elif kobj.associated_ip == '1.0.0.25':
-            #     self.draw_single_obj(kobj, PINK)
-            # else:
-            #     print(kobj.associated_ip)
-            self.draw_single_obj(kobj,(255,255,0))
-            # else:
-            #     self.draw_single_obj(kobj,(120,120,120))
+            if kobj.associated_ip == 'A04B200008':
+                self.draw_single_obj(kobj, INDIGO)
+            elif kobj.associated_ip == 'A04B200003':
+                self.draw_single_obj(kobj, RED)
+            elif kobj.associated_ip == 'A04B200007':
+                self.draw_single_obj(kobj, YELLOW)
+            elif kobj.associated_ip == 'A04B200001':
+                self.draw_single_obj(kobj, BLUE)
+            elif kobj.associated_ip == 'A04B200004':
+                self.draw_single_obj(kobj, SKYBLUE)
+            elif kobj.associated_ip == 'A04B200005':
+                self.draw_single_obj(kobj, PINK)
+
+            # if len(kobj.associated_info)>=2:
+            #     self.draw_single_obj(kobj,(255,255,0))
+            else:
+                self.draw_single_obj(kobj,(255,255,255))
+
 
     def draw_fobj(self):
         for intersection in self.model.intersections:
@@ -392,7 +392,7 @@ class TrackView:
     
     def draw_single_obj(self, obj, color = (255,200,200)):
         font = pygame.font.Font(None, 20)  
-
+        id = obj.id
         posx =  obj.posx 
         posy =  - obj.posy 
         velx = obj.velx
@@ -405,6 +405,9 @@ class TrackView:
         polygon_pos = self.get_polygon_pos(posx, posy, width, length, heading_angle_deg)   
 
         posx_pixel, posy_pixel = self.get_pixel_position(posx, posy)
+
+        text = font.render(str(id), True, (255, 255, 255))  # 흰색 텍스트
+        self.screen.blit(text, (posx_pixel, posy_pixel))
 
         # if move_state == 2:
         #     pygame.draw.circle(self.screen, (200,200,200), (posx_pixel, posy_pixel), 10, 0)

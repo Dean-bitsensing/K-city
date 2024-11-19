@@ -198,7 +198,7 @@ def input_processing_temp(file_path : str, radars : dict, landmark_position : li
                 new_obj.id = fobj['id']
                 ## have to handle status
                 new_obj.status = fobj['state[0]']
-                new_obj.update_state = fobj['state[2]']
+                # new_obj.update_state = fobj['state[2]']
                 new_obj.move_state = fobj['state[3]']
                 posx = fobj['xpos']
                 posy = fobj['ypos']

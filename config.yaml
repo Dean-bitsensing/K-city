@@ -37,7 +37,7 @@ verona:
     - 10.9879317
   info:
     API_KEY: AIzaSyAX-DtCyFMUB13qbSPHNB-M847w4woneWw
-    MAX_SCAN: 50
+    MAX_SCAN: 200
     UTM_zone_32N: epsg:32652
     WGS84: epsg:4326
     atm_num: 10

@@ -6,7 +6,7 @@ from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 from .data import *
 from scipy.optimize import minimize
-from .fusion import *
+from .new_fusion import fusion_main
 class MainModel:
     def __init__(self, config):
 
@@ -55,7 +55,7 @@ class MainModel:
                 atm.get_scan_data(current_scan, self.grid_model.GRID_WINDOW_WIDTH//2, self.grid_model.GRID_WINDOW_LENGTH//2)
 
     def fusion(self):
-        return fusion_main(self.config)
+        return fusion_main()
 
     def init_model_class(self):
         self.window_model = WindowModel()
